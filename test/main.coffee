@@ -82,7 +82,7 @@ describe "app", ->
 
   suites = [
     require('./suites/basic')
-    # require('./suites/filtering')
+    require('./suites/filtering')
   ]
   for s in suites
     s(g, g.baseurl)
