@@ -53,7 +53,7 @@ exports.delete = (item, assotiations, cb) ->
     cb(err, item)
 
 _deleteSingleAssoc = (a, item, cb) ->
-  cond = a.defaults
+  cond = _.extend({}, a.defaults)
   cond[a.fk] = item.id
   a.model.destroy(where: cond)
   .then (found)->
