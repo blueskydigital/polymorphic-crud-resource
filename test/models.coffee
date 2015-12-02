@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) ->
     birth_year: DataTypes.INTEGER
     town: DataTypes.STRING
     age: DataTypes.INTEGER
+    parent_id: DataTypes.INTEGER
   ,
     timestamps: false
 

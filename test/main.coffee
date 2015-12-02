@@ -80,5 +80,9 @@ describe "app", ->
 
   g.data = require('./data')
 
-  T = require('./suites/basic')
-  T(g, g.baseurl)
+  suites = [
+    require('./suites/basic')
+    # require('./suites/filtering')
+  ]
+  for s in suites
+    s(g, g.baseurl)
