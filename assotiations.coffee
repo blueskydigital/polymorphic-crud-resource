@@ -9,11 +9,11 @@ exports.save = (body, saved, assotiations, cb) ->
 
 _saveSingleAssoc = (a, body, saved, cb) ->
   if body[a.name]
-    cond = a.defaults
+    cond = _.extend({}, a.defaults)
     cond[a.fk] = saved.id
     a.model.destroy(where: cond)
     .then ->
-      newI = (_.extend({}, a.defaults, i) for i in body[a.name])
+      newI = (_.extend({}, cond, i) for i in body[a.name])
       a.model.bulkCreate newI
     .then ->
       saved.dataValues[a.name] = body[a.name]
