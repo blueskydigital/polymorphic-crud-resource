@@ -1,3 +1,4 @@
+_ = require('lodash')
 
 exports.createSearchOptions = (req)->
 
@@ -19,4 +20,16 @@ exports.createSearchOptions = (req)->
   if req.query.attrs
     opts.attributes = JSON.parse(req.query.attrs)
 
+  if req.query.embed
+    opts.include = JSON.parse(req.query.embed)
+
   return opts
+
+exports.filterAssocs = (include, assocs) ->
+  ass4load = []
+  for i, idx in include || []
+    a = _.find(assocs, (item)->item.name == i)
+    if a
+      ass4load.push(a)
+      include.splice(idx, 1)
+  return ass4load

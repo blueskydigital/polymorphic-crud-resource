@@ -21,21 +21,27 @@ _saveSingleAssoc = (a, body, saved, cb) ->
     .catch (err)->
       cb(err)
 
-exports.load = (item, assotiations, cb) ->
+exports.load = (items, assotiations, cb) ->
   async.map assotiations, (ass, callback)->
-    _loadSingleAssoc(ass, item, callback)
+    _loadSingleAssoc(ass, items, callback)
   , (err, results) ->
-    cb(err, item)
+    cb(err, items)
 
-_loadSingleAssoc = (a, item, cb) ->
-  cond = a.defaults
-  cond[a.fk] = item.id
+_loadSingleAssoc = (a, items, cb) ->
+  _idx = {}
+  for i in items
+    _idx[i['id']] = i
+  cond = _.extend({}, a.defaults)
+  cond[a.fk] = {$in: _.pluck(items, 'id')}
   # remove default attrs (we don't want to add join params)
   attrs = _.remove Object.keys(a.model.attributes), (i)->
-    return i not in Object.keys(cond)
+    return i not in Object.keys(a.defaults)
   a.model.findAll(where: cond, attributes: attrs)
   .then (found)->
-    item.dataValues[a.name] = found
+    for f in found
+      item = _idx[f[a.fk]]
+      item.dataValues[a.name] = [] if not item.dataValues[a.name]
+      item.dataValues[a.name].push(_.omit(f.dataValues, [a.fk]))
     cb(null)
   .catch (err)->
     cb(err)

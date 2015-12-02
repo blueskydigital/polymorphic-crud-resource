@@ -88,3 +88,17 @@ module.exports = (g, addr) ->
       for i in body
         Object.keys(i).length.should.eql 2
       done()
+
+  it "shall list subset of attrs (with name embeded)", (done) ->
+    request
+      url: addr + '/?attrs=["birth_year", "town"]&embed=["name"]'
+      json: true
+      method: 'get'
+    , (err, res, body) ->
+      return done(err) if err
+      res.statusCode.should.eql 200
+      console.log JSON.stringify(body)
+      body.length.should.eql 3
+      for i in body
+        Object.keys(i).length.should.eql 4 # with id
+      done()

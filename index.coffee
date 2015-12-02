@@ -14,9 +14,17 @@ module.exports = (Model, assotiations=[]) ->
   _list = (req, res) ->
     try
       searchOpts = utils.createSearchOptions(req)
+      ass4load = utils.filterAssocs(searchOpts.include, assotiations)
+      # we want id (generaly primary ids) as well
+      if ass4load.length > 0 and searchOpts.attributes
+        searchOpts.attributes.push('id')
     catch err
       return res.status(400).send(err)
     Model.findAll(searchOpts).then (results) ->
+      if ass4load.length > 0
+        return assots.load results, ass4load, (err, loadedresults)->
+          return res.status(400).send(err) if err
+          res.status(200).json loadedresults
       res.status(200).json results
     .catch (err)->
       return res.status(400).send(err)
@@ -24,7 +32,7 @@ module.exports = (Model, assotiations=[]) ->
   _create = (req, res, next) ->
     n = Model.build(req.body)
     n.save().then (saved) ->
-      if assotiations
+      if assotiations.length > 0
         assots.save req.body, saved, assotiations, (err, saved)->
           return res.status(400).send(err) if err
           res.status(201).json(saved)
@@ -37,7 +45,7 @@ module.exports = (Model, assotiations=[]) ->
     _load req.params.id, (err, found)->
       return res.status(400).send(err) if err
       return res.status(404).send('not found') if not found
-      assots.load found, assotiations, (err, saved)->
+      assots.load [found], assotiations, (err, saved)->
         return res.status(400).send(err) if err
         res.json found
 
@@ -45,7 +53,7 @@ module.exports = (Model, assotiations=[]) ->
     _load req.params.id, (err, found)->
       return res.status(400).send(err) if err
       return res.status(404).send('not found') if not found
-      assots.load found, assotiations, (err, saved)->
+      assots.load [found], assotiations, (err, saved)->
         return res.status(400).send(err) if err
         asses2update = _.filter assotiations, (i) -> i.name of req.body
         for k, v of req.body
@@ -63,7 +71,7 @@ module.exports = (Model, assotiations=[]) ->
     _load req.params.id, (err, found)->
       return res.status(400).send(err) if err
       return res.status(404).send('not found') if not found
-      assots.load found, assotiations, (err, saved)->
+      assots.load [found], assotiations, (err, saved)->
         return res.status(400).send(err) if err
         found.destroy().then ->
           assots.delete found, assotiations, (err, removed)->
