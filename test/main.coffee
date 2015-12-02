@@ -78,19 +78,7 @@ describe "app", ->
   # run the rest of tests
   g.baseurl = "http://localhost:#{port}"
 
-  entityFactory = ()->
-    birth_year: 1983
-    name: [
-      {lang: 'cz', value: 'CZTrolol'}
-      {lang: 'en', value: 'ENTrolol'}
-    ]
-    descr: [
-      {lang: 'cz', value: 'CZdescr'}
-      {lang: 'en', value: 'ENdescr'}
-    ]
+  g.data = require('./data')
 
-  CRUDTester = require('./tests')
-  CRUDTester entityFactory,
-    name: [{lang: 'cz', value: 'ChangedCZTrolol'}]
-    birth_year: 1999
-  , g.baseurl
+  T = require('./suites/basic')
+  T(g, g.baseurl)

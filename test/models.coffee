@@ -4,6 +4,8 @@ module.exports = (sequelize, DataTypes) ->
 
   person = sequelize.define 'person',
     birth_year: DataTypes.INTEGER
+    town: DataTypes.STRING
+    age: DataTypes.INTEGER
   ,
     timestamps: false
 

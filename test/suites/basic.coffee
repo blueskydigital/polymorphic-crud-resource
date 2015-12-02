@@ -2,9 +2,13 @@
 should = require 'should'
 request = require 'request'
 
-module.exports = (entityFactory, change, addr) ->
+module.exports = (g, addr) ->
 
-  troll = entityFactory()
+  troll = g.data[0]
+
+  change =
+    name: [{lang: 'cz', value: 'ChangedCZTrolol'}]
+    birth_year: 1999
 
   it "shall create new item", (done) ->
     request
