@@ -1,5 +1,6 @@
 _ = require('lodash')
 assots = require('./assotiations')
+utils = require('./utils')
 
 module.exports = (Model, assotiations=[]) ->
 
@@ -11,10 +12,14 @@ module.exports = (Model, assotiations=[]) ->
       cb(err)
 
   _list = (req, res) ->
-    Model.findAll().then (results) ->
+    try
+      searchOpts = utils.createSearchOptions(req)
+    catch err
+      return res.status(400).send(err)
+    Model.findAll(searchOpts).then (results) ->
       res.status(200).json results
     .catch (err)->
-      return res.status(400).send(err) if err
+      return res.status(400).send(err)
 
   _create = (req, res, next) ->
     n = Model.build(req.body)
@@ -26,7 +31,7 @@ module.exports = (Model, assotiations=[]) ->
       else
         res.status(201).json(saved)
     .catch (err)->
-      return res.status(400).send(err) if err
+      return res.status(400).send(err)
 
   _retrieve = (req, res) ->
     _load req.params.id, (err, found)->
@@ -52,7 +57,7 @@ module.exports = (Model, assotiations=[]) ->
               res.json(saved)
           res.json updated
         .catch (err)->
-          return res.status(400).send(err) if err
+          return res.status(400).send(err)
 
   _delete = (req, res) ->
     _load req.params.id, (err, found)->
@@ -64,7 +69,7 @@ module.exports = (Model, assotiations=[]) ->
           assots.delete found, assotiations, (err, removed)->
             res.json found
         .catch (err)->
-          return res.status(400).send(err) if err
+          return res.status(400).send(err)
 
   initApp: (app, middlewares=[])->
     app.get('', _list)
