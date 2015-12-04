@@ -33,9 +33,10 @@ _loadSingleAssoc = (a, items, cb) ->
     _idx[i['id']] = i
   cond = _.extend({}, a.defaults)
   cond[a.fk] = {$in: _.pluck(items, 'id')}
-  # remove default attrs (we don't want to add join params)
-  attrs = _.remove Object.keys(a.model.attributes), (i)->
-    return i not in Object.keys(a.defaults)
+  # if present: remove default attrs (we don't want to add join params)
+  if a.defaults
+    attrs = _.remove Object.keys(a.model.attributes), (i)->
+      return i not in Object.keys(a.defaults)
   a.model.findAll(where: cond, attributes: attrs)
   .then (found)->
     for f in found
