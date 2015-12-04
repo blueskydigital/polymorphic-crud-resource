@@ -14,6 +14,7 @@ module.exports = (g, addr, data, change) ->
       method: 'post'
     , (err, res, body) ->
       return done(err) if err
+      console.log JSON.stringify(addr: body, null, '  ')
       res.statusCode.should.eql 201
       should.exist body.id
       troll.id = body.id
@@ -26,6 +27,7 @@ module.exports = (g, addr, data, change) ->
       method: 'get'
     , (err, res, body) ->
       return done(err) if err
+      console.log JSON.stringify({addr: addr, body: body}, null, '  ')
       res.statusCode.should.eql 200
       body.length.should.eql 1
       should.exist body[0].id
@@ -41,6 +43,7 @@ module.exports = (g, addr, data, change) ->
       return done(err) if err
 
       res.statusCode.should.eql 200
+      console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       should.deepEqual(body, troll)
       done()
 
@@ -56,6 +59,7 @@ module.exports = (g, addr, data, change) ->
       return done(err) if err
 
       res.statusCode.should.eql 200
+      console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       changedTroll = JSON.parse(JSON.stringify(troll))
       for k, v of change
         changedTroll[k] = change[k]
@@ -71,5 +75,6 @@ module.exports = (g, addr, data, change) ->
       return done(err) if err
 
       res.statusCode.should.eql 200
+      console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       should.deepEqual(body, changedTroll)
       done()
