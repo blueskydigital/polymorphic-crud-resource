@@ -30,16 +30,21 @@ module.exports = (Model, assotiations=[]) ->
       return res.status(400).send(err)
 
   _create = (req, res, next) ->
-    n = Model.build(req.body)
+    _do_create req.body, (err, newinstance)->
+      return res.status(400).send(err) if err
+      res.status(201).json(newinstance)
+
+  _do_create = (body, cb)->
+    n = Model.build(body)
     n.save().then (saved) ->
       if assotiations.length > 0
-        assots.save req.body, saved, assotiations, (err, saved)->
-          return res.status(400).send(err) if err
-          res.status(201).json(saved)
+        assots.save body, saved, assotiations, (err, saved)->
+          return cb(err) if err
+          cb(null, saved)
       else
-        res.status(201).json(saved)
+        cb(null, saved)
     .catch (err)->
-      return res.status(400).send(err)
+      return cb(err)
 
   _retrieve = (req, res) ->
     _load req.params.id, (err, found)->
@@ -85,3 +90,5 @@ module.exports = (Model, assotiations=[]) ->
     app.get('/:id', _retrieve)
     app.put('/:id', middlewares, _update)
     app['delete']('/:id', middlewares, _delete)
+
+  create: _do_create
