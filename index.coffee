@@ -84,11 +84,11 @@ module.exports = (Model, assotiations=[]) ->
         .catch (err)->
           return res.status(400).send(err)
 
-  initApp: (app, middlewares=[])->
-    app.get('', _list)
-    app.post('', middlewares, _create)
-    app.get('/:id', _retrieve)
-    app.put('/:id', middlewares, _update)
-    app['delete']('/:id', middlewares, _delete)
+  initApp: (app, middlewares={})->
+    app.get('', middlewares['list'] or [], _list)
+    app.post('', middlewares['create'] or [], _create)
+    app.get('/:id', middlewares['get'] or [], _retrieve)
+    app.put('/:id', middlewares['update'] or [], _update)
+    app['delete']('/:id', middlewares['delete'] or [], _delete)
 
   create: _do_create
