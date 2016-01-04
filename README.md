@@ -29,3 +29,16 @@ personsCRUD = CRUD sequelize.models.person, [
 # mount it to express app
 personsCRUD.initApp(app)
 ```
+
+# app middlewares
+
+You can specify for each operation an array of middlewares when doing initApp:
+
+```
+authMWare = expressJwt(secret: process.env.SERVER_SECRET)
+
+personsCRUD.initApp app,
+  'create': [authMWare]
+  'update': [authMWare]
+  'delete': [authMWare]
+```
