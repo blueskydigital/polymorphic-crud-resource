@@ -20,6 +20,8 @@ _saveSingleAssoc = (a, body, saved, cb) ->
       cb(null)
     .catch (err)->
       cb(err)
+  else
+    cb(null) 
 
 exports.load = (items, assotiations, cb) ->
   async.map assotiations, (ass, callback)->
