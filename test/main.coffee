@@ -83,6 +83,7 @@ describe "app", ->
   suites = [
     require('./suites/basic')
     require('./suites/filtering')
+    require('./suites/edgeCases')
   ]
   for s in suites
     s(g, g.baseurl)

@@ -3,25 +3,25 @@ _ = require('lodash')
 
 exports.save = (body, saved, assotiations, cb) ->
   async.map assotiations, (ass, callback)->
-    _saveSingleAssoc(ass, body, saved, callback)
+    if body[ass.name]
+      _saveSingleAssoc(ass, body, saved, callback)
+    else
+      callback(null)
   , (err, results) ->
     cb(err, saved)
 
 _saveSingleAssoc = (a, body, saved, cb) ->
-  if body[a.name]
-    cond = _.extend({}, a.defaults)
-    cond[a.fk] = saved.id
-    a.model.destroy(where: cond)
-    .then ->
-      newI = (_.extend({}, cond, i) for i in body[a.name])
-      a.model.bulkCreate newI
-    .then ->
-      saved.dataValues[a.name] = body[a.name]
-      cb(null)
-    .catch (err)->
-      cb(err)
-  else
-    cb(null) 
+  cond = _.extend({}, a.defaults)
+  cond[a.fk] = saved.id
+  a.model.destroy(where: cond)
+  .then ->
+    newI = (_.extend({}, cond, i) for i in body[a.name])
+    a.model.bulkCreate newI
+  .then ->
+    saved.dataValues[a.name] = body[a.name]
+    cb(null)
+  .catch (err)->
+    cb(err)
 
 exports.load = (items, assotiations, cb) ->
   async.map assotiations, (ass, callback)->
