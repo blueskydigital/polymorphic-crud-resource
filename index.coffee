@@ -4,12 +4,15 @@ utils = require('./utils')
 
 module.exports = (Model, assotiations=[]) ->
 
-  _load = (id, cb, options={}) ->
-    options.where = {id: id}
+  _load = (req, res, next) ->
+    options =
+      where: {id: req.params.id}
     Model.find(options).then (found) ->
-      cb(null, found)
+      return res.status(404).send('not found') if not found
+      req.found = found
+      next()
     .catch (err)->
-      cb(err)
+      return res.status(400).send(err)
 
   _list = (req, res) ->
     try
@@ -48,15 +51,13 @@ module.exports = (Model, assotiations=[]) ->
       return cb(err)
 
   # ------------------------------------ RETRIEVE -------------------------------
-  _do_retrieve = (id, cb) ->
-    _load id, (err, found)->
+  _do_retrieve = (item, cb) ->
+    assots.load [item], assotiations, (err, saved)->
       return cb(err) if err
-      assots.load [found], assotiations, (err, saved)->
-        return cb(err) if err
-        cb(null, found)
+      cb(null, item)
 
   _retrieve = (req, res) ->
-    _do_retrieve req.params.id, (err, found)->
+    _do_retrieve req.found, (err, found)->
       return res.status(400).send(err) if err
       return res.status(404).send('not found') if not found
       res.json found
@@ -78,12 +79,9 @@ module.exports = (Model, assotiations=[]) ->
         return cb(err)
 
   _update = (req, res) ->
-    _load req.params.id, (err, found)->
+    _do_update req.found, req.body, (err, updated) ->
       return res.status(400).send(err) if err
-      return res.status(404).send('not found') if not found
-      _do_update found, req.body, (err, updated) ->
-        return res.status(400).send(err) if err
-        res.json updated
+      res.json updated
 
   # ------------------------------------ DELETE -------------------------------
   _do_delete = (item, cb) ->
@@ -96,22 +94,20 @@ module.exports = (Model, assotiations=[]) ->
         return cb(err)
 
   _delete = (req, res) ->
-    _load req.params.id, (err, found)->
+    _do_delete req.found, (err, removed)->
       return res.status(400).send(err) if err
-      return res.status(404).send('not found') if not found
-      _do_delete found, (err, removed)->
-        return res.status(400).send(err) if err
-        res.json removed
+      res.json removed
 
   # ------------------------------------ APP -------------------------------
   initApp: (app, middlewares={})->
     app.get('', middlewares['list'] or [], _list)
     app.post('', middlewares['create'] or [], _create)
-    app.get('/:id', middlewares['get'] or [], _retrieve)
-    app.put('/:id', middlewares['update'] or [], _update)
-    app['delete']('/:id', middlewares['delete'] or [], _delete)
+    app.get('/:id', middlewares['get'] or [], _load, _retrieve)
+    app.put('/:id', middlewares['update'] or [], _load, _update)
+    app['delete']('/:id', middlewares['delete'] or [], _load, _delete)
 
   create: _do_create
   retrieve: _do_retrieve
   update: _do_update
   delete: _do_delete
+  load: _load
