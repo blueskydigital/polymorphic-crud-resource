@@ -115,3 +115,7 @@ module.exports = (Model, assotiations=[]) ->
   update: _do_update
   delete: _do_delete
   load: _load
+  createMW: _create
+  retrieveMW: _retrieve
+  updateMW: _update
+  deleteMW: _delete
