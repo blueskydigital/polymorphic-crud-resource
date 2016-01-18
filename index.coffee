@@ -14,18 +14,22 @@ module.exports = (Model, assotiations=[]) ->
     .catch (err)->
       return res.status(400).send(err)
 
-  _list = (req, res) ->
+  # ------------------------------------ SEARCH -------------------------------
+  _prepare_search = (req, res, next) ->
     try
-      searchOpts = utils.createSearchOptions(req)
-      ass4load = utils.filterAssocs(searchOpts.include, assotiations)
+      req.searchOpts = utils.createSearchOptions(req)
+      req.ass4load = utils.filterAssocs(req.searchOpts.include, assotiations)
       # we want id (generaly primary ids) as well
-      if ass4load.length > 0 and searchOpts.attributes
-        searchOpts.attributes.push('id')
+      if req.ass4load.length > 0 and req.searchOpts.attributes
+        req.searchOpts.attributes.push('id')
+      next()
     catch err
       return res.status(400).send(err)
-    Model.findAll(searchOpts).then (results) ->
-      if ass4load.length > 0
-        return assots.load results, ass4load, (err, loadedresults)->
+
+  _list = (req, res) ->
+    Model.findAll(req.searchOpts).then (results) ->
+      if req.ass4load.length > 0
+        return assots.load results, req.ass4load, (err, loadedresults)->
           return res.status(400).send(err) if err
           res.status(200).json loadedresults
       res.status(200).json results
@@ -100,7 +104,7 @@ module.exports = (Model, assotiations=[]) ->
 
   # ------------------------------------ APP -------------------------------
   initApp: (app, middlewares={})->
-    app.get('', middlewares['list'] or [], _list)
+    app.get('', middlewares['list'] or [], _prepare_search, _list)
     app.post('', middlewares['create'] or [], _create)
     app.get('/:id', middlewares['get'] or [], _load, _retrieve)
     app.put('/:id', middlewares['update'] or [], _load, _update)
