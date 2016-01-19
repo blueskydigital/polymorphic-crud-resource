@@ -1,6 +1,7 @@
 
 should = require 'should'
 request = require 'request'
+utils = require './utils'
 
 module.exports = (g, addr, data, change) ->
 
@@ -44,7 +45,7 @@ module.exports = (g, addr, data, change) ->
 
       res.statusCode.should.eql 200
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
-      should.deepEqual(body, troll)
+      utils.deepCompare(body, troll)
       done()
 
   changedTroll = null
@@ -63,7 +64,7 @@ module.exports = (g, addr, data, change) ->
       changedTroll = JSON.parse(JSON.stringify(troll))
       for k, v of change
         changedTroll[k] = change[k]
-      should.deepEqual(body, changedTroll)
+      utils.deepCompare(body, changedTroll)
       done()
 
   it "shall delete item", (done) ->
@@ -76,5 +77,5 @@ module.exports = (g, addr, data, change) ->
 
       res.statusCode.should.eql 200
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
-      should.deepEqual(body, changedTroll)
+      utils.deepCompare(body, changedTroll)
       done()
