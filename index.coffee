@@ -91,11 +91,12 @@ module.exports = (Model, assotiations=[]) ->
   _do_delete = (item, cb) ->
     assots.load [item], assotiations, (err, saved)->
       return cb(err) if err
-      item.destroy().then ->
-        assots.delete item, assotiations, (err, removed)->
+      assots.delete item, assotiations, (err, removed) ->
+        return cb(err) if err
+        item.destroy().then ->
           cb(null, removed)
-      .catch (err)->
-        return cb(err)
+        .catch (err)->
+          return cb(err)
 
   _delete = (req, res) ->
     _do_delete req.found, (err, removed)->
