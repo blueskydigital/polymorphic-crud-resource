@@ -30,11 +30,12 @@ module.exports = (g, addr) ->
       return done(err) if err
       res.statusCode.should.eql 200
       body.length.should.eql 3
+      res.headers['content-range'].should.eql '0-3/3'
       done()
 
   it "shall list items in range 1-3", (done) ->
     request
-      url: "#{addr}/?offset=1&limit=2"
+      url: "#{addr}/?offset=1&limit=20"
       json: true
       method: 'get'
     , (err, res, body) ->
@@ -44,6 +45,7 @@ module.exports = (g, addr) ->
       body.length.should.eql 2
       body[0].id.should.eql 2
       body[1].id.should.eql 3
+      res.headers['content-range'].should.eql '1-3/3'
       done()
 
   it "shall list items sorted according age", (done) ->

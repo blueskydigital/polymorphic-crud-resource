@@ -26,13 +26,20 @@ module.exports = (Model, assotiations=[]) ->
     catch err
       return res.status(400).send(err)
 
+  _getContentRange = (req, count) ->
+    beg = parseInt(req.query.offset) || 0
+    end = beg + parseInt(req.query.limit || count)
+    end = if count < end then count else end
+    return "#{beg}-#{end}/#{count}"
+
   _list = (req, res) ->
-    Model.findAll(req.searchOpts).then (results) ->
+    Model.findAndCountAll(req.searchOpts).then (result) ->
+      res.set('Content-Range', _getContentRange(req, result.count))
       if req.ass4load.length > 0
-        return assots.load results, req.ass4load, (err, loadedresults)->
+        return assots.load result.rows, req.ass4load, (err, loadedresults)->
           return res.status(400).send(err) if err
           res.status(200).json loadedresults
-      res.status(200).json results
+      res.status(200).json result.rows
     .catch (err)->
       return res.status(400).send(err)
 
