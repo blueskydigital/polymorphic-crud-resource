@@ -24,6 +24,7 @@
     "test": "./node_modules/.bin/mocha --compilers coffee:coffee-script/register test",
     "testdebug": "./node_modules/.bin/mocha --debug-brk --compilers coffee:coffee-script/register test"
   },
+  "repository": "https://github.com/blueskydigital/polymorphic-crud-resource",
   "author": "Vaclav Klecanda",
   "license": "MIT"
 }
