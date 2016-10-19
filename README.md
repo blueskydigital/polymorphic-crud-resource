@@ -1,6 +1,6 @@
 # polymorphic-crud-resource
 
-[![Codeship Status for digitalairwaystv/da-web-backend](https://codeship.com/projects/9d947f10-5ca1-0132-ef81-1a777663c9d2/status?branch=master)](https://codeship.com/projects/50902)
+[![build status](https://api.travis-ci.org/blueskydigital/polymorphic-crud-resource.svg)](https://travis-ci.org/blueskydigital/polymorphic-crud-resource)
 
 Express resource that is able to handle polymorphic One2Many assotiations with sequelize.
 
