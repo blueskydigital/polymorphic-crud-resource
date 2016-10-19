@@ -122,3 +122,4 @@ module.exports = (Model, assotiations=[]) ->
   updateMW: _update
   deleteMW: _delete
   listMW: _list
+  prepareSearchMW: _prepare_search
