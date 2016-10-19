@@ -30,7 +30,7 @@ module.exports = (g, addr) ->
       return done(err) if err
       res.statusCode.should.eql 200
       body.length.should.eql 3
-      res.headers['content-range'].should.eql '0-3/3'
+      res.headers['x-total-count'].should.eql '3'
       done()
 
   it "shall list items in range 1-3", (done) ->
@@ -41,11 +41,11 @@ module.exports = (g, addr) ->
     , (err, res, body) ->
       return done(err) if err
       res.statusCode.should.eql 200
-      console.log body
+      console.log JSON.stringify(body, null, 2)
       body.length.should.eql 2
       body[0].id.should.eql 2
       body[1].id.should.eql 3
-      res.headers['content-range'].should.eql '1-3/3'
+      res.headers['x-total-count'].should.eql '3'
       done()
 
   it "shall list items sorted according age", (done) ->
@@ -56,7 +56,7 @@ module.exports = (g, addr) ->
     , (err, res, body) ->
       return done(err) if err
       res.statusCode.should.eql 200
-      console.log body
+      console.log JSON.stringify(body, null, 2)
       body.length.should.eql 3
       body[0].age.should.eql 32
       body[1].age.should.eql 26
@@ -71,7 +71,7 @@ module.exports = (g, addr) ->
     , (err, res, body) ->
       return done(err) if err
       res.statusCode.should.eql 200
-      console.log body
+      console.log JSON.stringify(body, null, 2)
       body.length.should.eql 2
       body[0].birth_year.should.eql 1988
       body[1].birth_year.should.eql 1983
@@ -85,10 +85,26 @@ module.exports = (g, addr) ->
     , (err, res, body) ->
       return done(err) if err
       res.statusCode.should.eql 200
-      console.log body
+      console.log JSON.stringify(body, null, 2)
       body.length.should.eql 2
       for i in body
         Object.keys(i).length.should.eql 2
+      res.headers['x-total-count'].should.eql '2'
+      done()
+
+  it "shall list subset with PAGING of attrs of items that has parent_id=1", (done) ->
+    request
+      url: addr + '/?offset=1&limit=1&filter={"parent_id":"1"}&sort=[["birth_year", "asc"]]&attrs=["birth_year", "town"]'
+      json: true
+      method: 'get'
+    , (err, res, body) ->
+      return done(err) if err
+      res.statusCode.should.eql 200
+      console.log JSON.stringify(body, null, 2)
+      body.length.should.eql 1
+      for i in body
+        Object.keys(i).length.should.eql 2
+      res.headers['x-total-count'].should.eql '2'
       done()
 
   it "shall list subset of attrs (with name embeded)", (done) ->
@@ -99,7 +115,7 @@ module.exports = (g, addr) ->
     , (err, res, body) ->
       return done(err) if err
       res.statusCode.should.eql 200
-      console.log JSON.stringify(body)
+      console.log JSON.stringify(body, null, 2)
       body.length.should.eql 3
       for i in body
         Object.keys(i).length.should.eql 4 # with id
