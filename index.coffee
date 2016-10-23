@@ -2,11 +2,14 @@ _ = require('lodash')
 assots = require('./assotiations')
 utils = require('./utils')
 
-module.exports = (Model, assotiations=[]) ->
+module.exports = (Model, assotiations=[], opts={}) ->
+
+  pkname = opts.identifier || 'id'
 
   _load = (req, res, next) ->
     options =
-      where: {id: req.params.id}
+      where: {}
+    options.where[pkname] = req.params.id
     Model.find(options).then (found) ->
       return res.status(404).send('not found') if not found
       req.found = found
@@ -21,7 +24,7 @@ module.exports = (Model, assotiations=[]) ->
       req.ass4load = utils.filterAssocs(req.searchOpts.include, assotiations)
       # we want id (generaly primary ids) as well
       if req.ass4load.length > 0 and req.searchOpts.attributes
-        req.searchOpts.attributes.push('id')
+        req.searchOpts.attributes.push(pkname)
       next()
     catch err
       return res.status(400).send(err)
@@ -30,7 +33,7 @@ module.exports = (Model, assotiations=[]) ->
     Model.findAndCountAll(req.searchOpts).then (result) ->
       res.set('x-total-count', result.count)
       if req.ass4load.length > 0
-        return assots.load result.rows, req.ass4load, (err, loadedresults)->
+        return assots.load result.rows, req.ass4load, pkname, (err, loadedresults)->
           return res.status(400).send(err) if err
           res.status(200).json loadedresults
       res.status(200).json result.rows
@@ -47,7 +50,7 @@ module.exports = (Model, assotiations=[]) ->
     n = Model.build(body)
     n.save().then (saved) ->
       if assotiations.length > 0
-        assots.save body, saved, assotiations, (err, saved)->
+        assots.save body, saved, assotiations, pkname, (err, saved)->
           return cb(err) if err
           cb(null, saved)
       else
@@ -57,7 +60,7 @@ module.exports = (Model, assotiations=[]) ->
 
   # ------------------------------------ RETRIEVE -------------------------------
   _do_retrieve = (item, cb) ->
-    assots.load [item], assotiations, (err, saved)->
+    assots.load [item], assotiations, pkname, (err, saved)->
       return cb(err) if err
       cb(null, item)
 
@@ -69,14 +72,14 @@ module.exports = (Model, assotiations=[]) ->
 
   # ------------------------------------ UPDATE -------------------------------
   _do_update = (item, body, cb) ->
-    assots.load [item], assotiations, (err, saved)->
+    assots.load [item], assotiations, pkname, (err, saved)->
       return cb(err) if err
       asses2update = _.filter assotiations, (i) -> i.name of body
       for k, v of body
         item[k] = v
       item.save().then (updated)->
         if asses2update
-          return assots.save body, updated, asses2update, (err, saved)->
+          return assots.save body, updated, asses2update, pkname, (err, saved)->
             return cb(err) if err
             cb(null, saved)
         cb(null, updated)
@@ -90,9 +93,9 @@ module.exports = (Model, assotiations=[]) ->
 
   # ------------------------------------ DELETE -------------------------------
   _do_delete = (item, cb) ->
-    assots.load [item], assotiations, (err, saved)->
+    assots.load [item], assotiations, pkname, (err, saved)->
       return cb(err) if err
-      assots.delete item, assotiations, (err, removed) ->
+      assots.delete item, assotiations, pkname, (err, removed) ->
         return cb(err) if err
         item.destroy().then ->
           cb(null, removed)
