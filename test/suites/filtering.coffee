@@ -6,11 +6,12 @@ async = require 'async'
 module.exports = (g, addr) ->
 
   it "shall prepare data", (done) ->
-    async.map g.data, (item, cback)->
+    #NOTE: mapSeries used because tests uses sqlite that has probles with transactions
+    async.mapSeries g.data, (item, cback)->
       request
         url: addr
         body: item
-        json: true,
+        json: true
         method: 'post'
       , (err, res, body) ->
         return done(err) if err

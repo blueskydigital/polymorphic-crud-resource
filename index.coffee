@@ -30,13 +30,13 @@ module.exports = (Model, assotiations=[], opts={}) ->
       return res.status(400).send(err)
 
   _list = (req, res) ->
+    rows = null
     Model.findAndCountAll(req.searchOpts).then (result) ->
       res.set('x-total-count', result.count)
-      if req.ass4load.length > 0
-        return assots.load result.rows, req.ass4load, pkname, (err, loadedresults)->
-          return res.status(400).send(err) if err
-          res.status(200).json loadedresults
-      res.status(200).json result.rows
+      rows = result.rows
+      return assots.load(rows, req.ass4load, pkname)
+    .then ()->
+      res.status(200).json rows
     .catch (err)->
       return res.status(400).send(err)
 
@@ -47,44 +47,47 @@ module.exports = (Model, assotiations=[], opts={}) ->
       res.status(201).json(newinstance)
 
   _do_create = (body, cb)->
-    n = Model.build(body)
-    n.save().then (saved) ->
-      if assotiations.length > 0
-        assots.save body, saved, assotiations, pkname, (err, saved)->
-          return cb(err) if err
-          cb(null, saved)
-      else
-        cb(null, saved)
-    .catch (err)->
-      return cb(err)
+    item = Model.build(body)
+    Model.sequelize.transaction().then (t)->
+      item.save({transaction: t})
+      .then (saved)->
+        return assots.save(body, saved, assotiations, pkname, t)
+      .then (allsaved)->
+        t.commit()
+        cb(null, item.toJSON())
+      .catch (err)->
+        t.rollback()
+        cb(err)
 
-  # ------------------------------------ RETRIEVE -------------------------------
-  _do_retrieve = (item, cb) ->
-    assots.load [item], assotiations, pkname, (err, saved)->
-      return cb(err) if err
-      cb(null, item)
+  # ------------------------------------ RETRIEVE ------------------------------
+
+  _do_retrieve = (item) ->
+    return assots.load([item], assotiations, pkname)
 
   _retrieve = (req, res) ->
-    _do_retrieve req.found, (err, found)->
-      return res.status(400).send(err) if err
-      return res.status(404).send('not found') if not found
-      res.json found
+    _do_retrieve(req.found).then ()->
+      res.json req.found
+    .catch (err)->
+      res.status(400).send(err)
 
   # ------------------------------------ UPDATE -------------------------------
   _do_update = (item, body, cb) ->
-    assots.load [item], assotiations, pkname, (err, saved)->
-      return cb(err) if err
-      asses2update = _.filter assotiations, (i) -> i.name of body
-      for k, v of body
+    assots.load([item], assotiations, pkname).then ()->
+      # asses2update = _.filter assotiations, (i) -> i.name of body
+      for k, v of body  # update values
         item[k] = v
-      item.save().then (updated)->
-        if asses2update
-          return assots.save body, updated, asses2update, pkname, (err, saved)->
-            return cb(err) if err
-            cb(null, saved)
-        cb(null, updated)
-      .catch (err)->
-        return cb(err)
+      Model.sequelize.transaction().then (t)->
+        item.save({transaction: t})
+        .then (updated)->
+          return assots.save(body, updated, assotiations, pkname, t)
+        .then (allsaved)->
+          t.commit()
+          cb(null, item.toJSON())
+        .catch (err)->
+          t.rollback()
+          cb(err)
+    .catch (err)->
+      cb(err)
 
   _update = (req, res) ->
     _do_update req.found, req.body, (err, updated) ->
@@ -93,14 +96,18 @@ module.exports = (Model, assotiations=[], opts={}) ->
 
   # ------------------------------------ DELETE -------------------------------
   _do_delete = (item, cb) ->
-    assots.load [item], assotiations, pkname, (err, saved)->
-      return cb(err) if err
-      assots.delete item, assotiations, pkname, (err, removed) ->
-        return cb(err) if err
-        item.destroy().then ->
-          cb(null, removed)
-        .catch (err)->
-          return cb(err)
+    Model.sequelize.transaction().then (t)->
+      assots.load([item], assotiations, pkname) # load data to send back
+      .then ()->
+        assots.delete(item, assotiations, pkname, t)
+      .then ()->
+        item.destroy()
+      .then (allsaved)->
+        t.commit()
+        cb(null, item.toJSON())
+      .catch (err)->
+        t.rollback()
+        cb(err)
 
   _delete = (req, res) ->
     _do_delete req.found, (err, removed)->

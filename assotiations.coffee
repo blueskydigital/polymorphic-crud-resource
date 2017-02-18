@@ -1,35 +1,32 @@
 async = require('async')
 _ = require('lodash')
+Sequelize = require('sequelize')
 
-exports.save = (body, saved, assotiations, pkname, cb) ->
-  async.map assotiations, (ass, callback)->
+exports.save = (body, saved, assotiations, pkname, transaction) ->
+  promises = []
+  for ass in assotiations
     if body[ass.name]
-      _saveSingleAssoc(ass, body, saved, pkname, callback)
-    else
-      callback(null)
-  , (err, results) ->
-    cb(err, saved)
+      promise = _saveSingleAssoc(ass, body, saved, pkname, transaction)
+      promises.push promise
+  return Sequelize.Promise.all(promises)
 
-_saveSingleAssoc = (a, body, saved, pkname, cb) ->
+_saveSingleAssoc = (a, body, saved, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = saved[pkname]
-  a.model.destroy(where: cond)
+  return a.model.destroy(where: cond, {transaction: transaction})
   .then ->
     newI = (_.extend({}, cond, i) for i in body[a.name])
-    a.model.bulkCreate newI
+    return a.model.bulkCreate newI, {transaction: transaction}
   .then ->
     saved.dataValues[a.name] = body[a.name]
-    cb(null)
-  .catch (err)->
-    cb(err)
 
-exports.load = (items, assotiations, pkname, cb) ->
-  async.map assotiations, (ass, callback)->
-    _loadSingleAssoc(ass, items, pkname, callback)
-  , (err, results) ->
-    cb(err, items)
+exports.load = (items, assotiations, pkname) ->
+  promises = []
+  for ass in assotiations
+    promises.push(_loadSingleAssoc(ass, items, pkname))
+  return Sequelize.Promise.all(promises)
 
-_loadSingleAssoc = (a, items, pkname, cb) ->
+_loadSingleAssoc = (a, items, pkname) ->
   _idx = {}
   for i in items
     _idx[i[pkname]] = i
@@ -39,27 +36,20 @@ _loadSingleAssoc = (a, items, pkname, cb) ->
   if a.defaults
     attrs = _.remove Object.keys(a.model.attributes), (i)->
       return i not in Object.keys(a.defaults)
-  a.model.findAll(where: cond, attributes: attrs)
-  .then (found)->
+  return a.model.findAll(where: cond, attributes: attrs).then (found)->
     for f in found
       item = _idx[f[a.fk]]
       item.dataValues[a.name] = [] if not item.dataValues[a.name]
       item.dataValues[a.name].push(_.omit(f.dataValues, [a.fk]))
-    cb(null)
-  .catch (err)->
-    cb(err)
 
-exports.delete = (item, assotiations, pkname, cb) ->
-  async.map assotiations, (ass, callback)->
-    _deleteSingleAssoc(ass, item, pkname, callback)
-  , (err, results) ->
-    cb(err, item)
+exports.delete = (item, assotiations, pkname, transaction) ->
+  promises = []
+  for ass in assotiations
+    promise = _deleteSingleAssoc(ass, item, pkname, transaction)
+    promises.push(promise)
+  return Sequelize.Promise.all(promises)
 
-_deleteSingleAssoc = (a, item, pkname, cb) ->
+_deleteSingleAssoc = (a, item, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = item[pkname]
-  a.model.destroy(where: cond)
-  .then (found)->
-    cb(null)
-  .catch (err)->
-    cb(err)
+  return a.model.destroy(where: cond, {transaction: transaction})
