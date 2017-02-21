@@ -13,7 +13,7 @@ exports.save = (body, saved, assotiations, pkname, transaction) ->
 _saveSingleAssoc = (a, body, saved, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = saved[pkname]
-  return a.model.destroy(where: cond, {transaction: transaction})
+  return a.model.destroy({where: cond, transaction: transaction})
   .then ->
     newI = (_.extend({}, cond, i) for i in body[a.name])
     return a.model.bulkCreate newI, {transaction: transaction}
@@ -52,4 +52,4 @@ exports.delete = (item, assotiations, pkname, transaction) ->
 _deleteSingleAssoc = (a, item, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = item[pkname]
-  return a.model.destroy(where: cond, {transaction: transaction})
+  return a.model.destroy({where: cond, transaction: transaction})
