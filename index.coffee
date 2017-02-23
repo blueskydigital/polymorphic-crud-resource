@@ -72,22 +72,18 @@ module.exports = (Model, assotiations=[], opts={}) ->
 
   # ------------------------------------ UPDATE -------------------------------
   _do_update = (item, body, cb) ->
-    assots.load([item], assotiations, pkname).then ()->
-      # asses2update = _.filter assotiations, (i) -> i.name of body
-      for k, v of body  # update values
-        item[k] = v
-      Model.sequelize.transaction().then (t)->
-        item.save({transaction: t})
-        .then (updated)->
-          return assots.save(body, updated, assotiations, pkname, t)
-        .then (allsaved)->
-          t.commit()
-          cb(null, item.toJSON())
-        .catch (err)->
-          t.rollback()
-          cb(err)
-    .catch (err)->
-      cb(err)
+    for k, v of body  # update values
+      item[k] = v
+    Model.sequelize.transaction().then (t)->
+      item.save({transaction: t})
+      .then (updated)->
+        assots.update(body, updated, assotiations, pkname, t)
+      .then (allsaved)->
+        t.commit()
+        cb(null, item.toJSON())
+      .catch (err)->
+        t.rollback()
+        cb(err)
 
   _update = (req, res) ->
     _do_update req.found, req.body, (err, updated) ->

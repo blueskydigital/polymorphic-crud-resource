@@ -24,15 +24,14 @@ g =
 
 Sequelize = require('sequelize')
 
-url = process.env.DATABASE_URL || 'sqlite:'
-opts = {}
-if url.indexOf('sqlite:') >= 0
-  opts.dialect = 'sqlite'
-  if url.length > 8
-    opts.storage = url.slice(9)
+url = process.env.DATABASE_URL
 console.log("## DB: #{url}")
-
-sequelize = new Sequelize(url, opts)
+sequelize = new Sequelize(url, {
+  dialect: 'sqlite',
+  # autocommit: false,
+  # deferrable: 'NOT DEFERRABLE',
+  # isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.READ_COMMITTED
+})
 
 # entry ...
 describe "app", ->
@@ -53,11 +52,13 @@ describe "app", ->
         model: sequelize.models.translats
         fk: 'entity_id'
         defaults: entity_type: 0
+        uniques: ['lang']
       ,
         name: 'descr'
         model: sequelize.models.translats
         fk: 'entity_id'
         defaults: entity_type: 1
+        uniques: ['lang']
       ]
       personsCRUD.initApp(g.app)
 
@@ -66,6 +67,7 @@ describe "app", ->
         done()
     .catch (err) ->
       done(err)
+    return
 
   after (done) ->
     g.server.close()

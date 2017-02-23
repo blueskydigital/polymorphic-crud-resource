@@ -71,11 +71,7 @@ module.exports = (g, addr) ->
       should.exist body.id
       troll.id = body.id
 
-      # try to update troll with duplicate names
-      troll.name = [
-        {lang: 'cz', value: "ceskej troll"}
-        {lang: 'cz', value: "duplicitni ceskej troll"}
-      ]
+      # should not update any assotiations
       request
         url: "#{addr}/#{troll.id}"
         body: troll
@@ -83,17 +79,32 @@ module.exports = (g, addr) ->
         method: 'put'
       , (err, res, body) ->
         return done(err) if err
-        console.log JSON.stringify(addr: body, null, '  ')
-        res.statusCode.should.eql 400
+        console.log JSON.stringify(untached: body, null, '  ')
+        res.statusCode.should.eql 200
 
-        # and see if data changed
+        # try to update troll with duplicate names
+        troll.name = [
+          {lang: 'cz', value: "ceskej troll"}
+          {lang: 'cz', value: "duplicitni ceskej troll"}
+        ]
         request
           url: "#{addr}/#{troll.id}"
+          body: troll
           json: true
-          method: 'get'
+          method: 'put'
         , (err, res, body) ->
           return done(err) if err
-          console.log JSON.stringify(addr: body, null, '  ')
-          should.exist body.name
-          body.name.should.eql origNames
-          done()
+          console.log JSON.stringify(put: body, null, '  ')
+          res.statusCode.should.eql 400
+
+          # and see if data changed
+          request
+            url: "#{addr}/#{troll.id}"
+            json: true
+            method: 'get'
+          , (err, res, body) ->
+            return done(err) if err
+            console.log JSON.stringify(final: body, null, '  ')
+            should.exist body.name
+            body.name.should.eql origNames
+            done()
