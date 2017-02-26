@@ -1,31 +1,39 @@
 
 
-module.exports = (sequelize, DataTypes) ->
+module.exports = (sequelize, Sequelize) ->
 
   person = sequelize.define 'person',
-    birth_year: DataTypes.INTEGER
-    town: DataTypes.STRING
-    age: DataTypes.INTEGER
-    parent_id: DataTypes.INTEGER
+    birth_year: Sequelize.INTEGER
+    town: Sequelize.STRING
+    age: Sequelize.INTEGER
+    parent_id: Sequelize.INTEGER
   ,
     timestamps: false
 
   attr = sequelize.define 'translats',
-    entity_id:
-      type: DataTypes.INTEGER
+    id:
+      type: Sequelize.INTEGER
+      autoIncrement: true
       primaryKey: true
+    updated:
+      type: Sequelize.DATE
+      defaultValue: Sequelize.NOW
+    entity_id:
+      type: Sequelize.INTEGER
+      unique: 'compositeIndex'
     ###
     id of translated attribute, e.g.
     person.name = 3, enum.value = 0
     ###
     entity_type:
-      type: DataTypes.INTEGER
-      primaryKey: true
+      type: Sequelize.INTEGER
+      unique: 'compositeIndex'
     lang:
-      type: DataTypes.STRING
-      primaryKey: true
+      type: Sequelize.STRING
+      allowNull: false
+      unique: 'compositeIndex'
     value:
-      type: DataTypes.STRING
+      type: Sequelize.STRING
       allowNull: false
   ,
     timestamps: false

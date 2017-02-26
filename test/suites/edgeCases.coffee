@@ -1,6 +1,5 @@
 should = require 'should'
 request = require 'request'
-tester = require '../tester'
 
 module.exports = (g, addr) ->
 
@@ -69,24 +68,17 @@ module.exports = (g, addr) ->
       return done(err) if err
       res.statusCode.should.eql 201
       should.exist body.id
-      troll.id = body.id
 
-      # should not update any assotiations
+      # load troll
       request
-        url: "#{addr}/#{troll.id}"
-        body: troll
+        url: "#{addr}/#{body.id}"
         json: true
-        method: 'put'
+        method: 'get'
       , (err, res, body) ->
         return done(err) if err
-        console.log JSON.stringify(untached: body, null, '  ')
-        res.statusCode.should.eql 200
+        troll = body
 
-        # try to update troll with duplicate names
-        troll.name = [
-          {lang: 'cz', value: "ceskej troll"}
-          {lang: 'cz', value: "duplicitni ceskej troll"}
-        ]
+        # should not update any assotiations
         request
           url: "#{addr}/#{troll.id}"
           body: troll
@@ -94,17 +86,31 @@ module.exports = (g, addr) ->
           method: 'put'
         , (err, res, body) ->
           return done(err) if err
-          console.log JSON.stringify(put: body, null, '  ')
-          res.statusCode.should.eql 400
+          console.log JSON.stringify(untached: body, null, '  ')
+          res.statusCode.should.eql 200
 
-          # and see if data changed
+          # try to update troll with duplicate lang
+          updatedTrol = JSON.parse(JSON.stringify(troll))
+          updatedTrol.name[1].lang = 'cz'
+          updatedTrol.name[1].updated = new Date()
           request
             url: "#{addr}/#{troll.id}"
+            body: updatedTrol
             json: true
-            method: 'get'
+            method: 'put'
           , (err, res, body) ->
             return done(err) if err
-            console.log JSON.stringify(final: body, null, '  ')
-            should.exist body.name
-            body.name.should.eql origNames
-            done()
+            console.log JSON.stringify(put: body, null, '  ')
+            res.statusCode.should.eql 400
+
+            # and see if data changed
+            request
+              url: "#{addr}/#{troll.id}"
+              json: true
+              method: 'get'
+            , (err, res, body) ->
+              return done(err) if err
+              console.log JSON.stringify(final: body, null, '  ')
+              should.exist body.name
+              body.name.should.eql troll.name
+              done()

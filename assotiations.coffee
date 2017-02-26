@@ -14,8 +14,8 @@ _saveSingleAssoc = (a, body, saved, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = saved[pkname]
   newI = (_.extend({}, cond, i) for i in body[a.name])
-  return a.model.bulkCreate(newI, {transaction: transaction}).then ->
-    saved.dataValues[a.name] = body[a.name]
+  return a.model.bulkCreate(newI, {transaction: transaction}).then (created)->
+    saved.dataValues[a.name] = created
 
 exports.update = (body, saved, assotiations, pkname, transaction) ->
   promises = []
@@ -31,35 +31,28 @@ _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
   # find all assotiations
   return a.model.findAll(where: cond).then (found)->
     promises = []
-    solved = []
-    for row in found # solve each row separately (save? update? delete?)
-      promises.push(_updateOneRow(row, cond, a.uniques, data, solved, transaction))
-    # and save notexisting (new) assocs
-    promises.push(_saveNewAssocs(a, data, cond, solved, transaction))
+    # and save notexisting (new) assocs first
+    promises.push(_saveNewAssocs(a, data, cond, transaction))
+    # then continue with changed rows
+    changed = _.filter(data, (i)-> i.id != undefined)
+    for ch in changed
+      row = _.find(found, (i)-> i.id == ch.id)
+      if row == undefined
+        throw new Exception('row not found in existin, incomming data wrong')
+      if row.updated.toISOString() != ch.updated # update only if timestamps differ
+        for k, v of ch  # update values
+          row.setDataValue(k, v)
+        promises.push(row.save({transaction: transaction}))
+    # and destroy those existing rows that are not in data
+    for row in found
+      inData = _.find(data, (i)-> i.id == row.id)
+      if inData == undefined
+        promises.push(row.destroy({transaction: transaction}))
+    # return promise waiting 4 all operations
     return Sequelize.Promise.all(promises)
 
-_shouldUpdate = (inDB, inReq)->   # just compare attrs' toString
-  for k, v of inReq
-    return true if inDB[k].toString() != inReq[k].toString()
-  return false
-
-_updateOneRow = (row, cond, uniques, data, solved, transaction) ->
-  # look if it is in body
-  searchCond = {}
-  for u in uniques
-    searchCond[u] = row[u]
-  inBody = _.find(data, searchCond)
-  if inBody == undefined
-    return row.destroy({transaction: transaction})  # not in body -> delete
-  else
-    solved.push(inBody)
-    if _shouldUpdate(row, inBody)
-      for k, v of inBody  # update values
-        row[k] = v
-      return row.save({transaction: transaction})
-
-_saveNewAssocs = (a, data, ids, solved, transaction)->
-  newRows = _.filter(data, (i)-> i not in solved)
+_saveNewAssocs = (a, data, ids, transaction)->
+  newRows = _.filter(data, (i)-> i.id == undefined) # those without autogen id
   newI = (_.extend({}, ids, i) for i in newRows)
   return a.model.bulkCreate(newI, {transaction: transaction})
 
