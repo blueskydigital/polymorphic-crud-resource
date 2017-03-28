@@ -13,10 +13,11 @@ exports.save = (body, saved, assotiations, pkname, transaction) ->
 _saveSingleAssoc = (a, body, saved, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = saved[pkname]
-  return a.model.destroy({where: cond, transaction: transaction})
+  opts = if transaction then {transaction: transaction} else {}
+  return a.model.destroy(Object.assign({where: cond}, opts))
   .then ->
     newI = (_.extend({}, cond, i) for i in body[a.name])
-    return a.model.bulkCreate newI, {transaction: transaction}
+    return a.model.bulkCreate newI, opts
   .then ->
     saved.dataValues[a.name] = body[a.name]
 
@@ -52,4 +53,5 @@ exports.delete = (item, assotiations, pkname, transaction) ->
 _deleteSingleAssoc = (a, item, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = item[pkname]
-  return a.model.destroy({where: cond, transaction: transaction})
+  opts = if transaction then {transaction: transaction} else {}
+  return a.model.destroy(Object.assign({where: cond}, opts))

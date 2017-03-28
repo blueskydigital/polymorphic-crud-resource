@@ -59,13 +59,26 @@ describe "app", ->
         fk: 'entity_id'
         defaults: entity_type: 1
       ]
-      personsCRUD.initApp(g.app)
+      _createTransaction = (req, res, next) ->
+        sequelize.transaction().then (t)->
+          req.transaction = t
+          next()
+      personsCRUD.initApp(g.app, {
+        'create': [_createTransaction]
+        'update': [_createTransaction]
+        'delete': [_createTransaction]
+      })
+      g.app.use (err, req, res, next) ->
+        req.transaction.rollback() if req.transaction
+        res.status(400).json(err)
 
       g.server = g.app.listen port, (err) ->
         return done(err) if err
         done()
+      return
     .catch (err) ->
       done(err)
+    return
 
   after (done) ->
     g.server.close()
