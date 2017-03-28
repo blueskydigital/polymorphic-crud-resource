@@ -41,20 +41,19 @@ module.exports = (Model, assotiations=[], opts={}) ->
 
   # ------------------------------------ CREATE -------------------------------
   _create = (req, res, next) ->
-    _do_create req.body, req.transaction, (err, newinstance)->
-      return next(err) if err
+    _do_create req.body, req.transaction
+    .then (newinstance)->
       req.transaction.commit() if req.transaction
       res.status(201).json(newinstance)
+    .catch(next)
 
   _do_create = (body, transaction, cb)->
     item = Model.build(body)
-    item.save(if transaction then {transaction: transaction} else {})
+    return item.save(if transaction then {transaction: transaction} else {})
     .then (saved)->
       return assots.save(body, saved, assotiations, pkname, transaction)
     .then (allsaved)->
-      cb(null, item.toJSON())
-    .catch (err)->
-      cb(err)
+      return item.toJSON()
 
   # ------------------------------------ RETRIEVE ------------------------------
 
@@ -68,41 +67,40 @@ module.exports = (Model, assotiations=[], opts={}) ->
 
   # ------------------------------------ UPDATE -------------------------------
   _do_update = (item, body, transaction, cb) ->
-    assots.load([item], assotiations, pkname).then ()->
+    return assots.load([item], assotiations, pkname)
+    .then ()->
       # asses2update = _.filter assotiations, (i) -> i.name of body
       for k, v of body  # update values
         item[k] = v
-      item.save(if transaction then {transaction: transaction} else {})
-      .then (updated)->
-        return assots.save(body, updated, assotiations, pkname, transaction)
-      .then (allsaved)->
-        cb(null, item.toJSON())
-      .catch (err)->
-        cb(err)
+      return item.save(if transaction then {transaction: transaction} else {})
+    .then (updated)->
+      return assots.save(body, updated, assotiations, pkname, transaction)
+    .then (allsaved)->
+      return item.toJSON()
 
   _update = (req, res, next) ->
-    _do_update req.found, req.body, req.transaction, (err, updated) ->
-      return next(err) if err
+    _do_update req.found, req.body, req.transaction
+    .then (updated) ->
       req.transaction.commit() if req.transaction
       res.json updated
+    .catch(next)
 
   # ------------------------------------ DELETE -------------------------------
   _do_delete = (item, transaction, cb) ->
     assots.load([item], assotiations, pkname) # load data to send back
     .then ()->
-      assots.delete(item, assotiations, pkname, transaction)
+      return assots.delete(item, assotiations, pkname, transaction)
     .then ()->
-      item.destroy(if transaction then {transaction: transaction} else {})
+      return item.destroy(if transaction then {transaction: transaction} else {})
     .then (allsaved)->
-      cb(null, item.toJSON())
-    .catch (err)->
-      cb(err)
+      return item.toJSON()
 
   _delete = (req, res, next) ->
-    _do_delete req.found, req.transaction, (err, removed)->
-      return next(err) if err
+    _do_delete req.found, req.transaction
+    .then (removed) ->
       req.transaction.commit() if req.transaction
       res.json removed
+    .catch(next)
 
   # ------------------------------------ APP -------------------------------
   initApp: (app, middlewares={})->
