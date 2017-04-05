@@ -89,4 +89,5 @@ exports.delete = (item, assotiations, pkname, transaction) ->
 _deleteSingleAssoc = (a, item, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = item[pkname]
-  return a.model.destroy({where: cond, transaction: transaction})
+  opts = if transaction then {transaction: transaction} else {}
+  return a.model.destroy(Object.assign({where: cond}, opts))

@@ -11,11 +11,10 @@ module.exports = (Model, assotiations=[], opts={}) ->
       where: {}
     options.where[pkname] = req.params.id
     Model.find(options).then (found) ->
-      return res.status(404).send('not found') if not found
+      return next(status: 404, message: 'not found') if not found
       req.found = found
       next()
-    .catch (err)->
-      return res.status(400).send(err)
+    .catch(next)
 
   # ------------------------------------ SEARCH -------------------------------
   _prepare_search = (req, res, next) ->
@@ -27,9 +26,9 @@ module.exports = (Model, assotiations=[], opts={}) ->
         req.searchOpts.attributes.push(pkname)
       next()
     catch err
-      return res.status(400).send(err)
+      return next(err)
 
-  _list = (req, res) ->
+  _list = (req, res, next) ->
     rows = null
     Model.findAndCountAll(req.searchOpts).then (result) ->
       res.set('x-total-count', result.count)
@@ -37,78 +36,72 @@ module.exports = (Model, assotiations=[], opts={}) ->
       return assots.load(rows, req.ass4load, pkname)
     .then ()->
       res.status(200).json rows
-    .catch (err)->
-      return res.status(400).send(err)
+      next()
+    .catch(next)
 
   # ------------------------------------ CREATE -------------------------------
   _create = (req, res, next) ->
-    _do_create req.body, (err, newinstance)->
-      return res.status(400).send(err) if err
+    _do_create req.body, req.transaction
+    .then (newinstance)->
+      req.transaction.commit() if req.transaction
       res.status(201).json(newinstance)
+      next()
+    .catch(next)
 
-  _do_create = (body, cb)->
+  _do_create = (body, transaction)->
     item = Model.build(body)
-    Model.sequelize.transaction().then (t)->
-      item.save({transaction: t})
-      .then (saved)->
-        return assots.save(body, saved, assotiations, pkname, t)
-      .then (allsaved)->
-        t.commit()
-        cb(null, item.toJSON())
-      .catch (err)->
-        t.rollback()
-        cb(err)
+    return item.save(if transaction then {transaction: transaction} else {})
+    .then (saved)->
+      return assots.save(body, saved, assotiations, pkname, transaction)
+    .then (allsaved)->
+      return item.toJSON()
 
   # ------------------------------------ RETRIEVE ------------------------------
 
   _do_retrieve = (item) ->
     return assots.load([item], assotiations, pkname)
 
-  _retrieve = (req, res) ->
+  _retrieve = (req, res, next) ->
     _do_retrieve(req.found).then ()->
       res.json req.found
-    .catch (err)->
-      res.status(400).send(err)
+      next()
+    .catch(next)
 
   # ------------------------------------ UPDATE -------------------------------
-  _do_update = (item, body, cb) ->
+  _do_update = (item, body, transaction) ->
     for k, v of body  # update values
       item[k] = v
-    Model.sequelize.transaction().then (t)->
-      item.save({transaction: t})
-      .then (updated)->
-        assots.update(body, updated, assotiations, pkname, t)
-      .then (allsaved)->
-        t.commit()
-        cb(null, item.toJSON())
-      .catch (err)->
-        t.rollback()
-        cb(err)
+    return item.save(if transaction then {transaction: transaction} else {})
+    .then (updated)->
+      return assots.update(body, updated, assotiations, pkname, transaction)
+    .then (allsaved)->
+      return item.toJSON()
 
-  _update = (req, res) ->
-    _do_update req.found, req.body, (err, updated) ->
-      return res.status(400).send(err) if err
+  _update = (req, res, next) ->
+    _do_update req.found, req.body, req.transaction
+    .then (updated) ->
+      req.transaction.commit() if req.transaction
       res.json updated
+      next()
+    .catch(next)
 
   # ------------------------------------ DELETE -------------------------------
-  _do_delete = (item, cb) ->
-    Model.sequelize.transaction().then (t)->
-      assots.load([item], assotiations, pkname) # load data to send back
-      .then ()->
-        assots.delete(item, assotiations, pkname, t)
-      .then ()->
-        item.destroy()
-      .then (allsaved)->
-        t.commit()
-        cb(null, item.toJSON())
-      .catch (err)->
-        t.rollback()
-        cb(err)
+  _do_delete = (item, transaction, cb) ->
+    assots.load([item], assotiations, pkname) # load data to send back
+    .then ()->
+      return assots.delete(item, assotiations, pkname, transaction)
+    .then ()->
+      return item.destroy(if transaction then {transaction: transaction} else {})
+    .then (allsaved)->
+      return item.toJSON()
 
-  _delete = (req, res) ->
-    _do_delete req.found, (err, removed)->
-      return res.status(400).send(err) if err
+  _delete = (req, res, next) ->
+    _do_delete req.found, req.transaction
+    .then (removed) ->
+      req.transaction.commit() if req.transaction
       res.json removed
+      next()
+    .catch(next)
 
   # ------------------------------------ APP -------------------------------
   initApp: (app, middlewares={})->
