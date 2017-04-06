@@ -39,7 +39,10 @@ _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
       row = _.find(found, (i)-> i.id == ch.id)
       if row == undefined
         throw new Exception('row not found in existin, incomming data wrong')
-      if row.updated && row.updated.toISOString() != ch.updated # update only if timestamps differ
+      if ! ch.updated   # wrong data doesnot contain updated, but should => force update
+        ch.updated = new Date()
+      # update only if timestamps differ or DB row not set updated
+      if !row.updated || row.updated.toISOString() != ch.updated
         for k, v of ch  # update values
           row.setDataValue(k, v)
         promises.push(row.save({transaction: transaction}))
