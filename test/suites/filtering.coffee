@@ -121,3 +121,17 @@ module.exports = (g, addr) ->
       for i in body
         Object.keys(i).length.should.eql 4 # with id
       done()
+
+  it "shall work with *_like filter", (done) ->
+    request
+      url: addr + '/?filter={"town_like":"aha"}'
+      json: true
+      method: 'get'
+    , (err, res, body) ->
+      return done(err) if err
+      res.statusCode.should.eql 200
+      console.log JSON.stringify(body, null, 2)
+      body.length.should.eql 2
+      for i in body
+        i.town.indexOf('ra').should.be.above 0, 'wrong data received'
+      done()
