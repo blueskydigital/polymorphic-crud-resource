@@ -71,7 +71,11 @@ module.exports = (g, addr) ->
 
       res.statusCode.should.eql 200
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
-      utils.deepCompare(body, updatedTrol)
+      res.body.town.should.eql 'ZellAmSee'
+      body.name.length.should.eql 2
+      body.name[0].value.should.eql 'anglickej trololol'
+      body.name[0].lang.should.eql 'us'
+      body.name[1].lang.should.eql 'es'
       done()
 
   it "shall delete item", (done) ->

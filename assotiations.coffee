@@ -28,11 +28,14 @@ exports.update = (body, saved, assotiations, pkname, transaction) ->
 _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
   cond = _.extend({}, a.defaults)
   cond[a.fk] = saved[pkname]
+  saved.dataValues[a.name] = []
   # find all assotiations
   return a.model.findAll(where: cond).then (found)->
     promises = []
     # and save notexisting (new) assocs first
-    promises.push(_saveNewAssocs(a, data, cond, transaction))
+    promises.push(_saveNewAssocs(a, data, cond, transaction).then (savedrows)->
+      saved.dataValues[a.name] = saved.dataValues[a.name].concat(savedrows)
+    )
     # then continue with changed rows
     changed = _.filter(data, (i)-> i.id != undefined)
     for ch in changed
@@ -45,7 +48,9 @@ _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
       if !row.updated || row.updated.toISOString() != ch.updated
         for k, v of ch  # update values
           row.setDataValue(k, v)
-        promises.push(row.save({transaction: transaction}))
+        promises.push(row.save({transaction: transaction}).then (savedrow)->
+          saved.dataValues[a.name].push(savedrow)
+        )
     # and destroy those existing rows that are not in data
     for row in found
       inData = _.find(data, (i)-> i.id == row.id)
