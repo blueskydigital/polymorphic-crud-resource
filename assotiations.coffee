@@ -82,9 +82,10 @@ _loadSingleAssoc = (a, items, pkname) ->
     attrs = _.remove Object.keys(a.model.attributes), (i)->
       return i not in Object.keys(a.defaults)
   return a.model.findAll(where: cond, attributes: attrs).then (found)->
+    for i in items
+      i.dataValues[a.name] = [] if not i.dataValues[a.name]
     for f in found
       item = _idx[f[a.fk]]
-      item.dataValues[a.name] = [] if not item.dataValues[a.name]
       item.dataValues[a.name].push(_.omit(f.dataValues, [a.fk]))
 
 exports.delete = (item, assotiations, pkname, transaction) ->

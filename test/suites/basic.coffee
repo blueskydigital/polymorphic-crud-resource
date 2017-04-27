@@ -22,6 +22,8 @@ module.exports = (g, addr) ->
       console.log JSON.stringify(created: body, null, '  ')
       res.statusCode.should.eql 201
       should.exist body.id
+      should.exist body.name
+      should.exist body.descr
       troll.id = body.id
       done()
 
@@ -48,6 +50,8 @@ module.exports = (g, addr) ->
       return done(err) if err
 
       res.statusCode.should.eql 200
+      should.exist body.name
+      should.exist body.descr
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       utils.deepCompare(body, troll)
       troll = body

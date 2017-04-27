@@ -11,7 +11,7 @@ module.exports = [
   age: 32
   parent_id: 1
   name: _gen('name', 'person1')
-  descr: _gen('descr', 'person1')
+  descr: []
 ,
   birth_year: 1991
   town: 'Praha'
