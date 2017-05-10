@@ -41,7 +41,7 @@ _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
     for ch in changed
       row = _.find(found, (i)-> i.id == ch.id)
       if row == undefined
-        throw new Exception('row not found in existin, incomming data wrong')
+        throw new Error('row not found in existin, incomming data wrong')
       if ! ch.updated   # wrong data doesnot contain updated, but should => force update
         ch.updated = new Date()
       # update only if timestamps differ or DB row not set updated
@@ -51,6 +51,8 @@ _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
         promises.push(row.save({transaction: transaction}).then (savedrow)->
           saved.dataValues[a.name].push(savedrow)
         )
+      else
+        saved.dataValues[a.name].push(row)
     # and destroy those existing rows that are not in data
     for row in found
       inData = _.find(data, (i)-> i.id == row.id)
@@ -63,7 +65,6 @@ _saveNewAssocs = (a, data, ids, transaction)->
   newRows = _.filter(data, (i)-> i.id == undefined) # those without autogen id
   newI = (_.extend({}, ids, i) for i in newRows)
   return a.model.bulkCreate(newI, {transaction: transaction})
-
 
 exports.load = (items, assotiations, pkname) ->
   promises = []

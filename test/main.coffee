@@ -71,6 +71,9 @@ describe "app", ->
       })
       g.app.use (err, req, res, next) ->
         req.transaction.rollback() if req.transaction
+        console.log '-----------------------'
+        console.log err
+        console.log '-----------------------'
         res.status(400).json(err)
 
       g.server = g.app.listen port, (err) ->
