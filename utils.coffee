@@ -7,7 +7,7 @@ exports.createSearchOptions = (req)->
   if req.query.filter
     filter = JSON.parse(req.query.filter)
     _.map filter, (v, k) ->
-      likematch = k.match(/([^_]+)_like/)
+      likematch = k.match(/(.+)_like$/)
       if likematch and likematch.length > 0
         delete filter[k]
         filter[likematch[1]] = {$like: "%#{v}%"}
