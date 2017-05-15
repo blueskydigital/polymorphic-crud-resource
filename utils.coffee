@@ -11,6 +11,10 @@ exports.createSearchOptions = (req)->
       if likematch and likematch.length > 0
         delete filter[k]
         filter[likematch[1]] = {$like: "%#{v}%"}
+      inmatch = k.match(/(.+)_in$/)
+      if inmatch and inmatch.length > 0
+        delete filter[k]
+        filter[inmatch[1]] = {$in: v.split(',')}
     opts.where = filter
 
   if req.query.sort
