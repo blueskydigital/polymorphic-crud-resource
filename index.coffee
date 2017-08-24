@@ -45,6 +45,7 @@ module.exports = (Model, assotiations=[], opts={}) ->
     .then (newinstance)->
       req.transaction.commit() if req.transaction
       res.status(201).json(newinstance)
+      req.params.id = newinstance.id  # save id for further process
       next()
     .catch(next)
 
