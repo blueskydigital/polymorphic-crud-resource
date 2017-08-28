@@ -40,19 +40,19 @@ _updateSingleAssoc = (a, data, saved, pkname, transaction) ->
     changed = _.filter(data, (i)-> i.id != undefined)
     for ch in changed
       row = _.find(found, (i)-> i.id == ch.id)
-      if row == undefined
-        throw new Error('row not found in existin, incomming data wrong')
-      if ! ch.updated   # wrong data doesnot contain updated, but should => force update
-        ch.updated = new Date()
-      # update only if timestamps differ or DB row not set updated
-      if !row.updated || row.updated.toISOString() != ch.updated
-        for k, v of ch  # update values
-          row.setDataValue(k, v)
-        promises.push(row.save({transaction: transaction}).then (savedrow)->
-          saved.dataValues[a.name].push(savedrow)
-        )
-      else
-        saved.dataValues[a.name].push(row)
+      if row != undefined
+        # throw new Error('row not found in existin, incomming data wrong: ' + JSON.stringify(ch))
+        if ! ch.updated   # wrong data doesnot contain updated, but should => force update
+          ch.updated = new Date()
+        # update only if timestamps differ or DB row not set updated
+        if !row.updated || row.updated.toISOString() != ch.updated
+          for k, v of ch  # update values
+            row.setDataValue(k, v)
+          promises.push(row.save({transaction: transaction}).then (savedrow)->
+            saved.dataValues[a.name].push(savedrow)
+          )
+        else
+          saved.dataValues[a.name].push(row)
     # and destroy those existing rows that are not in data
     for row in found
       inData = _.find(data, (i)-> i.id == row.id)
