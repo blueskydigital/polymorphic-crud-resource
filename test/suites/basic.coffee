@@ -79,9 +79,10 @@ module.exports = (g, addr) ->
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       res.body.town.should.eql 'ZellAmSee'
       body.name.length.should.eql 2
-      body.name[1].value.should.eql 'anglickej trololol'
-      body.name[1].lang.should.eql 'us'
-      body.name[0].lang.should.eql 'es'
+      us = body.name.find((i) -> i.lang == 'us')
+      us.value.should.eql 'anglickej trololol'
+      es = body.name.find((i) -> i.lang == 'es')
+      es.value.should.eql updatedTrol.name[0].value
       updatedTrol = body
       updatedTrol.name[1].id = 3  # NOTE: sequelize don't
       done()
@@ -98,13 +99,13 @@ module.exports = (g, addr) ->
       return done(err) if err
 
       res.statusCode.should.eql 200
-      console.log 'hovno'
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       res.body.town.should.eql 'ZellAmSee'
       body.name.length.should.eql 2
-      body.name[1].value.should.eql 'anglickej trololol'
-      body.name[1].lang.should.eql 'us'
-      body.name[0].lang.should.eql 'es'
+      us = body.name.find((i) -> i.lang == 'us')
+      us.value.should.eql 'anglickej trololol'
+      es = body.name.find((i) -> i.lang == 'es')
+      es.value.should.eql updatedTrol.name[0].value
       done()
 
   it "shall delete item", (done) ->
