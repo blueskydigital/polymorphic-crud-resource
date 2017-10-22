@@ -79,11 +79,11 @@ module.exports = (g, addr) ->
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       res.body.town.should.eql 'ZellAmSee'
       body.name.length.should.eql 2
-      body.name[0].value.should.eql 'anglickej trololol'
-      body.name[0].lang.should.eql 'us'
-      body.name[1].lang.should.eql 'es'
+      body.name[1].value.should.eql 'anglickej trololol'
+      body.name[1].lang.should.eql 'us'
+      body.name[0].lang.should.eql 'es'
       updatedTrol = body
-      updatedTrol.name[0].id = 3  # NOTE: sequelize don't
+      updatedTrol.name[1].id = 3  # NOTE: sequelize don't
       done()
 
   it "shall update again with the same vals and data not changed", (done) ->
@@ -102,9 +102,9 @@ module.exports = (g, addr) ->
       console.log JSON.stringify({addr: "#{addr}/#{troll.id}", body: body}, null, '  ')
       res.body.town.should.eql 'ZellAmSee'
       body.name.length.should.eql 2
-      body.name[0].value.should.eql 'anglickej trololol'
-      body.name[0].lang.should.eql 'us'
-      body.name[1].lang.should.eql 'es'
+      body.name[1].value.should.eql 'anglickej trololol'
+      body.name[1].lang.should.eql 'us'
+      body.name[0].lang.should.eql 'es'
       done()
 
   it "shall delete item", (done) ->
