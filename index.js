@@ -25,7 +25,11 @@ module.exports = function (Model, assotiations, opts) {
           message: 'not found'
         })
       }
-      req.found = found
+
+      return opts.retrieveOnLoad ? _doRetrieve(found) : found
+    })
+    .then(retrieved => {
+      req.found = retrieved
       return next()
     })
     .catch(next)
@@ -67,7 +71,7 @@ module.exports = function (Model, assotiations, opts) {
         req.transaction.commit()
       }
       res.status(201).json(newinstance)
-      req.params.id = newinstance.id
+      req.created = newinstance
       return next()
     })
     .catch(next)
@@ -119,6 +123,7 @@ module.exports = function (Model, assotiations, opts) {
         req.transaction.commit()
       }
       res.json(updated)
+      req.updated = updated
       return next()
     })
     .catch(next)
@@ -144,6 +149,7 @@ module.exports = function (Model, assotiations, opts) {
         req.transaction.commit()
       }
       res.json(removed)
+      req.deleted = removed
       return next()
     })
     .catch(next)
