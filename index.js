@@ -29,6 +29,7 @@ module.exports = function (Model, assotiations, opts) {
       return opts.retrieveOnLoad ? _doRetrieve(found) : found
     })
     .then(retrieved => {
+      req.loaded = retrieved.toJSON()
       req.found = retrieved
       return next()
     })
