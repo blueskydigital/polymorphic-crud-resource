@@ -26,7 +26,7 @@ module.exports = function (Model, assotiations, opts) {
         })
       }
       req.found = found
-      if (req.method === 'PUT') {
+      if (req.method === 'PUT' || req.method === 'DELETE') {
         return _doRetrieve(found).then(() => {
           req.loaded = JSON.parse(JSON.stringify(req.found))
           next()
@@ -146,7 +146,6 @@ module.exports = function (Model, assotiations, opts) {
         req.transaction.commit()
       }
       res.json(removed)
-      req.deleted = removed
       return next()
     })
     .catch(next)
