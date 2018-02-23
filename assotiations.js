@@ -19,8 +19,13 @@ function _saveSingleAssoc (a, body, saved, pkname, transaction) {
   return a.model.bulkCreate(newI, {
     transaction: transaction
   }).then((created) => {
-    saved.dataValues[a.name] = created
+    saved.dataValues[a.name] = created.map(i => _removePKs(a, i))
   })
+}
+
+function _removePKs (a, saved) {
+  const pks = [a.fk].concat(_.keys(a.defaults))
+  return _.omit(saved.toJSON(), pks)
 }
 
 exports.update = function (body, saved, assotiations, pkname, transaction) {
@@ -50,11 +55,11 @@ function _updateSingleAssoc (a, data, saved, pkname, transaction) {
         // update only if timestamps differ or DB row not set updated
         if (!row.updated || row.updated.toISOString() !== ch.updated) {
           const p = row.update(ch, {transaction: transaction}).then((savedrow) => {
-            return saved.dataValues[a.name].push(savedrow)
+            return saved.dataValues[a.name].push(_removePKs(a, savedrow))
           })
           promises.push(p)
         } else {
-          saved.dataValues[a.name].push(row)
+          saved.dataValues[a.name].push(_removePKs(a, row))
         }
       }
     })
@@ -70,6 +75,9 @@ function _updateSingleAssoc (a, data, saved, pkname, transaction) {
     return _saveNewAssocs(a, data, cond, transaction)
   }).then((savedrows) => {
     saved.dataValues[a.name] = saved.dataValues[a.name].concat(savedrows)
+    saved.dataValues[a.name] = saved.dataValues[a.name].map(i => {
+      return i.toJSON ? _removePKs(a, i) : i
+    })
   })
 }
 

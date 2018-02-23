@@ -25,13 +25,14 @@ module.exports = function (Model, assotiations, opts) {
           message: 'not found'
         })
       }
-
-      return opts.retrieveOnLoad ? _doRetrieve(found) : found
-    })
-    .then(retrieved => {
-      req.loaded = retrieved.toJSON()
-      req.found = retrieved
-      return next()
+      req.found = found
+      if (req.method === 'PUT') {
+        return _doRetrieve(found).then(() => {
+          req.loaded = JSON.parse(JSON.stringify(req.found))
+          next()
+        })
+      }
+      next()
     })
     .catch(next)
   }
@@ -101,12 +102,7 @@ module.exports = function (Model, assotiations, opts) {
   }
 
   function _doUpdate (item, body, transaction) {
-    var k, v
-    for (k in body) {
-      v = body[k]
-      item[k] = v
-    }
-    return item.save(transaction ? {
+    return item.update(body, transaction ? {
       transaction: transaction
     } : {})
     .then(function (updated) {
