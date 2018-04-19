@@ -40,5 +40,5 @@ exports.filterAssocs = (include, assocs) ->
     a = _.find(assocs, (item)->item.name == i)
     if a
       ass4load.push(a)
-  include.splice(0, include.length)
+  include && include.splice(0, include.length)
   return ass4load
