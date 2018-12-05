@@ -15,6 +15,11 @@ exports.createSearchOptions = (req)->
       if inmatch and inmatch.length > 0
         delete filter[k]
         filter[inmatch[1]] = {$in: v.split(',')}
+      betweenmatch = k.match(/(.+)__between$/)
+      if betweenmatch and betweenmatch.length > 0
+        delete filter[k]
+        f = filter[betweenmatch[1]] || v
+        filter[betweenmatch[1]] = {$between: [f, v]}
     opts.where = filter
 
   if req.query.sort
