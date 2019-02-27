@@ -6,33 +6,33 @@ exports.createSearchOptions = function (req) {
   if (req.query.filter) {
     const filter = JSON.parse(req.query.filter)
 
-    //  console.log(1000, req);
-
     _.map(filter, function (v, k) {
-      const likematch = k.match(/(.+)_like$/)
-      if (likematch && (likematch.length > 0)) {
+      const likeMatch = k.match(/(.+)_like$/)
+      if (likeMatch && (likeMatch.length > 0)) {
         delete filter[k]
-        filter[likematch[1]] = { $like: `%${v}%` }
+        filter[likeMatch[1]] = { $like: `%${v}%` }
       }
 
-      const inmatch = k.match(/(.+)_in$/)
-      if (inmatch && (inmatch.length > 0)) {
+      const inMatch = k.match(/(.+)_in$/)
+      if (inMatch && (inMatch.length > 0)) {
         delete filter[k]
-        filter[inmatch[1]] = { $in: v.split(',') }
+        filter[inMatch[1]] = { $in: v.split(',') }
       }
 
-      const betweenmatch = k.match(/(.+)__between$/)
-      if (betweenmatch && (betweenmatch.length > 0)) {
+      const betweenMatch = k.match(/(.+)__between$/)
+      if (betweenMatch && (betweenMatch.length > 0)) {
         delete filter[k]
-        const f = filter[betweenmatch[1]] || v
-        filter[betweenmatch[1]] = { $between: [f, v] }
+        const f = filter[betweenMatch[1]] || v
+        filter[betweenMatch[1]] = { $between: [f, v] }
       }
 
-      const andmatch = k.match(/(.+)__and$/)
-      if (andmatch && (andmatch.length > 0)) {
+      const customMatch1 = k.match(/(.+)__custom1$/)
+      if (customMatch1 && (customMatch1.length > 0)) {
+        // filter[k]: VALUE,KEY1,KEY2
         const value = filter[k].split(',')
         delete filter[k]
-        filter['$and'] = [
+        filter['$and'] = filter['$and'] || []
+        filter['$and'].push({ '$and': [
           {
             [value[1]]: {
               $lte: value[0]
@@ -43,7 +43,29 @@ exports.createSearchOptions = function (req) {
               $gte: value[0]
             }
           }
-        ]
+        ] })
+      }
+
+      const customMatch2 = k.match(/(.+)__custom2$/)
+      if (customMatch2 && (customMatch2.length > 0)) {
+        // filter[k]: VALUE,KEY
+        const value = filter[k].split(',')
+        delete filter[k]
+        filter['$and'] = filter['$and'] || []
+        filter['$and'].push({ '$or': [
+          {
+            '$and': [
+              { [value[1]]: { $like: `%${value[0]}%` } },
+              { [value[1]]: { $notLike: `-%` } }
+            ]
+          },
+          {
+            '$and': [
+              { [value[1]]: { $like: `-%` } },
+              { [value[1]]: { $notLike: `%${value[0]}%` } }
+            ]
+          }
+        ] })
       }
     })
     opts.where = filter
