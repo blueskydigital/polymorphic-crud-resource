@@ -1,6 +1,6 @@
 {
   "name": "polymorphic-crud-resource",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "resource that is able to handle polymorphic One2Many assotiations",
   "engines": {
     "node": ">=0.10.*"
@@ -26,5 +26,11 @@
   },
   "repository": "https://github.com/blueskydigital/polymorphic-crud-resource",
   "author": "Vaclav Klecanda",
+  "contributors": [
+    {
+      "name": "Adam Jun",
+      "email": "adam@bluesky.pro"
+    }
+  ],
   "license": "MIT"
 }
