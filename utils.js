@@ -19,11 +19,30 @@ exports.createSearchOptions = function (req) {
         filter[inMatch[1]] = { $in: v.split(',') }
       }
 
-      const betweenMatch = k.match(/(.+)__between$/)
-      if (betweenMatch && (betweenMatch.length > 0)) {
+      const fromMatch = k.match(/(.+)__from$/)
+      if (fromMatch && (fromMatch.length > 0)) {
+        const from = fromMatch[1]
+        const to = fromMatch[0] + '__to'
+        if (!filter[from] && filter[to]) {
+          filter[from] = { $between: [v, filter[to]] }
+        } else if (!filter[from]) {
+          filter[from] = { $gte: v }
+        }
         delete filter[k]
-        const f = filter[betweenMatch[1]] || v
-        filter[betweenMatch[1]] = { $between: [f, v] }
+        delete filter[to]
+      }
+
+      const toMatch = k.match(/(.+)__from__to$/)
+      if (toMatch && (toMatch.length > 0)) {
+        const from = toMatch[1] + '__from'
+        const to = toMatch[1]
+        if (!filter[to] && filter[from]) {
+          filter[to] = { $between: [filter[from], v] }
+        } else if (!filter[to]) {
+          filter[to] = { $lte: v }
+        }
+        delete filter[k]
+        delete filter[from]
       }
 
       const customMatch1 = k.match(/(.+)__custom1$/)
@@ -68,6 +87,7 @@ exports.createSearchOptions = function (req) {
         ] })
       }
     })
+
     opts.where = filter
   }
 
