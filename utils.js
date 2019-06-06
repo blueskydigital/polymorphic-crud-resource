@@ -51,18 +51,20 @@ exports.createSearchOptions = function (req) {
         const value = filter[k].split(',')
         delete filter[k]
         filter['$and'] = filter['$and'] || []
-        filter['$and'].push({ '$and': [
-          {
-            [value[1]]: {
-              $lte: value[0]
+        filter['$and'].push({
+          '$and': [
+            {
+              [value[1]]: {
+                $lte: value[0]
+              }
+            },
+            {
+              [value[2]]: {
+                $gte: value[0]
+              }
             }
-          },
-          {
-            [value[2]]: {
-              $gte: value[0]
-            }
-          }
-        ] })
+          ]
+        })
       }
 
       const customMatch2 = k.match(/(.+)__custom2$/)
@@ -71,20 +73,27 @@ exports.createSearchOptions = function (req) {
         const value = filter[k].split(',')
         delete filter[k]
         filter['$and'] = filter['$and'] || []
-        filter['$and'].push({ '$or': [
-          {
-            '$and': [
-              { [value[1]]: { $like: `%${value[0]}%` } },
-              { [value[1]]: { $notLike: `-%` } }
-            ]
-          },
-          {
-            '$and': [
-              { [value[1]]: { $like: `-%` } },
-              { [value[1]]: { $notLike: `%${value[0]}%` } }
-            ]
-          }
-        ] })
+        filter['$and'].push({
+          '$or': [
+            {
+              '$and': [
+                {
+                  '$or': [
+                    { [value[1]]: { $like: `%${value[0]}%` } },
+                    { [value[1]]: 'WW' }
+                  ]
+                },
+                { [value[1]]: { $notLike: `-%` } }
+              ]
+            },
+            {
+              '$and': [
+                { [value[1]]: { $like: `-%` } },
+                { [value[1]]: { $notLike: `%${value[0]}%` } }
+              ]
+            }
+          ]
+        })
       }
     })
 
