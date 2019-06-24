@@ -95,7 +95,23 @@ exports.createSearchOptions = function (req) {
           ]
         })
       }
-    })
+
+      const customMatch3 = k.match(/(.+)__custom3$/) // history filter
+      if(customMatch3 && (customMatch3.length > 0)) {
+        const value = filter[k].split(',')
+        delete filter[k]
+
+        filter['$and'] = filter['$and'] || []
+        filter['$and'].push({ 
+          '$or': [
+            { [value[1]]: null }, // is null
+            { [value[1]]: { $gte : new Date() }} // only greater than now
+          ]
+          
+        })
+
+      }
+     })
 
     opts.where = filter
   }
