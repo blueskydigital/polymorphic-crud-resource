@@ -114,7 +114,7 @@ exports.createSearchOptions = function (req) {
       }
      })
 
-    opts.where = filter
+    opts.where = { [Op.and]: filter['$and'] || [] }
   }
 
   if (req.query.sort) {
