@@ -51,8 +51,8 @@ exports.createSearchOptions = function (req) {
         // filter[k]: VALUE,KEY1,KEY2
         const value = filter[k].split(',')
         delete filter[k]
-        filter['$and'] = filter['$and'] || []
-        filter['$and'].push({
+        filter[Op.and] = filter[Op.and] || []
+        filter[Op.and].push({
           [Op.and]: [
             {
               [value[1]]: {
@@ -73,8 +73,8 @@ exports.createSearchOptions = function (req) {
         // filter[k]: VALUE,KEY
         const value = filter[k].split(',')
         delete filter[k]
-        filter['$and'] = filter['$and'] || []
-        filter['$and'].push({
+        filter[Op.and] = filter[Op.and] || []
+        filter[Op.and].push({
           [Op.or]: [
             {
               [Op.and]: [
@@ -102,8 +102,8 @@ exports.createSearchOptions = function (req) {
         const value = filter[k].split(',')
         delete filter[k]
 
-        filter['$and'] = filter['$and'] || []
-        filter['$and'].push({ 
+        filter[Op.and] = filter[Op.and] || []
+        filter[Op.and].push({ 
           [Op.or]: [
             { [value[1]]: null }, // is null
             { [value[1]]: { [Op.gte] : new Date() }} // only greater than now
@@ -114,7 +114,7 @@ exports.createSearchOptions = function (req) {
       }
      })
 
-    opts.where = { [Op.and]: filter['$and'] || [] }
+    opts.where = filter
   }
 
   if (req.query.sort) {
