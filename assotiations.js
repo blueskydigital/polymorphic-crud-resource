@@ -105,10 +105,10 @@ function _loadSingleAssoc (a, items, pkname) {
   })
   const cond = _.extend({}, a.defaults)
   cond[a.fk] = {
-    $in: _.pluck(items, pkname)
+    [Sequelize.Op.in]: _.pluck(items, pkname)
   }
   if (a.defaults) {
-    attrs = _.remove(Object.keys(a.model.attributes), (i) => {
+    attrs = _.remove(Object.keys(a.model.attributes || a.model.rawAttributes), (i) => {
       return Object.keys(a.defaults).indexOf(i) < 0
     })
   }

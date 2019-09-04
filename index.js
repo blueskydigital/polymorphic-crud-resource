@@ -18,7 +18,7 @@ module.exports = function (Model, assotiations, opts) {
       where: {}
     }
     options.where[pkname] = req.params.id
-    return Model.find(options).then((found) => {
+    return Model.findOne(options).then((found) => {
       if (!found) {
         return next({
           status: 404,

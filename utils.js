@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const Op = require('sequelize').Op
 
 exports.createSearchOptions = function (req) {
   const opts = {}
@@ -10,13 +11,13 @@ exports.createSearchOptions = function (req) {
       const likeMatch = k.match(/(.+)_like$/)
       if (likeMatch && (likeMatch.length > 0)) {
         delete filter[k]
-        filter[likeMatch[1]] = { $like: `%${v}%` }
+        filter[likeMatch[1]] = { [Op.like]: `%${v}%` }
       }
 
       const inMatch = k.match(/(.+)_in$/)
       if (inMatch && (inMatch.length > 0)) {
         delete filter[k]
-        filter[inMatch[1]] = { $in: v.split(',') }
+        filter[inMatch[1]] = { [Op.in]: v.split(',') }
       }
 
       const fromMatch = k.match(/(.+)__from$/)
@@ -24,9 +25,9 @@ exports.createSearchOptions = function (req) {
         const from = fromMatch[1]
         const to = fromMatch[0] + '__to'
         if (!filter[from] && filter[to]) {
-          filter[from] = { $between: [v, filter[to]] }
+          filter[from] = { [Op.between]: [v, filter[to]] }
         } else if (!filter[from]) {
-          filter[from] = { $gte: v }
+          filter[from] = { [Op.gte]: v }
         }
         delete filter[k]
         delete filter[to]
@@ -37,9 +38,9 @@ exports.createSearchOptions = function (req) {
         const from = toMatch[1] + '__from'
         const to = toMatch[1]
         if (!filter[to] && filter[from]) {
-          filter[to] = { $between: [filter[from], v] }
+          filter[to] = { [Op.between]: [filter[from], v] }
         } else if (!filter[to]) {
-          filter[to] = { $lte: v }
+          filter[to] = { [Op.lte]: v }
         }
         delete filter[k]
         delete filter[from]
@@ -50,17 +51,17 @@ exports.createSearchOptions = function (req) {
         // filter[k]: VALUE,KEY1,KEY2
         const value = filter[k].split(',')
         delete filter[k]
-        filter['$and'] = filter['$and'] || []
-        filter['$and'].push({
-          '$and': [
+        filter[Op.and] = filter[Op.and] || []
+        filter[Op.and].push({
+          [Op.and]: [
             {
               [value[1]]: {
-                $lte: value[0]
+                [Op.lte]: value[0]
               }
             },
             {
               [value[2]]: {
-                $gte: value[0]
+                [Op.gte]: value[0]
               }
             }
           ]
@@ -72,24 +73,24 @@ exports.createSearchOptions = function (req) {
         // filter[k]: VALUE,KEY
         const value = filter[k].split(',')
         delete filter[k]
-        filter['$and'] = filter['$and'] || []
-        filter['$and'].push({
-          '$or': [
+        filter[Op.and] = filter[Op.and] || []
+        filter[Op.and].push({
+          [Op.or]: [
             {
-              '$and': [
+              [Op.and]: [
                 {
-                  '$or': [
-                    { [value[1]]: { $like: `%${value[0]}%` } },
+                  [Op.or]: [
+                    { [value[1]]: { [Op.like]: `%${value[0]}%` } },
                     { [value[1]]: 'WW' }
                   ]
                 },
-                { [value[1]]: { $notLike: `-%` } }
+                { [value[1]]: { [Op.notLike]: `-%` } }
               ]
             },
             {
-              '$and': [
-                { [value[1]]: { $like: `-%` } },
-                { [value[1]]: { $notLike: `%${value[0]}%` } }
+              [Op.and]: [
+                { [value[1]]: { [Op.like]: `-%` } },
+                { [value[1]]: { [Op.notLike]: `%${value[0]}%` } }
               ]
             }
           ]
@@ -101,11 +102,11 @@ exports.createSearchOptions = function (req) {
         const value = filter[k].split(',')
         delete filter[k]
 
-        filter['$and'] = filter['$and'] || []
-        filter['$and'].push({ 
-          '$or': [
+        filter[Op.and] = filter[Op.and] || []
+        filter[Op.and].push({ 
+          [Op.or]: [
             { [value[1]]: null }, // is null
-            { [value[1]]: { $gte : new Date() }} // only greater than now
+            { [value[1]]: { [Op.gte] : new Date() }} // only greater than now
           ]
           
         })
