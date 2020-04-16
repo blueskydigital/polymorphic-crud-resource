@@ -7,6 +7,16 @@ exports.createSearchOptions = function (req) {
   if (req.query.filter) {
     const filter = JSON.parse(req.query.filter)
 
+    // exception for pricings
+    const filtersRestriction = ['/api/flyprivate_pricing']
+    const filtersException = (req.baseUrl).includes(filtersRestriction)
+    if (filtersException) {
+      delete filter.filter__custom1
+      delete filter.filter__custom2
+      delete filter.filter__custom3
+    }
+    // -
+
     _.map(filter, function (v, k) {
       const likeMatch = k.match(/(.+)_like$/)
       if (likeMatch && (likeMatch.length > 0)) {
@@ -103,12 +113,12 @@ exports.createSearchOptions = function (req) {
         delete filter[k]
 
         filter[Op.and] = filter[Op.and] || []
-        filter[Op.and].push({ 
+        filter[Op.and].push({
           [Op.or]: [
             { [value[1]]: null }, // is null
             { [value[1]]: { [Op.gte] : new Date() }} // only greater than now
           ]
-          
+
         })
 
       }
