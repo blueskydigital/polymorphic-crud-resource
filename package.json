@@ -1,13 +1,14 @@
 {
   "name": "polymorphic-crud-resource",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "resource that is able to handle polymorphic One2Many assotiations",
   "engines": {
-    "node": ">=0.10.*"
+    "node": ">=12",
+    "npm": "6"
   },
   "dependencies": {
     "async": "^1.5.0",
-    "lodash": "^3.10.1"
+    "lodash": "^4"
   },
   "devDependencies": {
     "body-parser": "^1.8.2",

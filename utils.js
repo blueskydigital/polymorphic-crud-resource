@@ -1,5 +1,6 @@
 const _ = require('lodash')
-const Op = require('sequelize').Op
+const sequelize = require('sequelize')
+const Op = sequelize.Op
 
 exports.createSearchOptions = function (req) {
   const opts = {}
@@ -94,12 +95,12 @@ exports.createSearchOptions = function (req) {
                     { [value[1]]: 'WW' }
                   ]
                 },
-                { [value[1]]: { [Op.notLike]: `-%` } }
+                { [value[1]]: { [Op.notLike]: '-%' } }
               ]
             },
             {
               [Op.and]: [
-                { [value[1]]: { [Op.like]: `-%` } },
+                { [value[1]]: { [Op.like]: '-%' } },
                 { [value[1]]: { [Op.notLike]: `%${value[0]}%` } }
               ]
             }
@@ -108,7 +109,7 @@ exports.createSearchOptions = function (req) {
       }
 
       const customMatch3 = k.match(/(.+)__custom3$/) // history filter
-      if(customMatch3 && (customMatch3.length > 0)) {
+      if (customMatch3 && (customMatch3.length > 0)) {
         const value = filter[k].split(',')
         delete filter[k]
 
@@ -116,19 +117,27 @@ exports.createSearchOptions = function (req) {
         filter[Op.and].push({
           [Op.or]: [
             { [value[1]]: null }, // is null
-            { [value[1]]: { [Op.gte] : new Date() }} // only greater than now
+            { [value[1]]: { [Op.gte]: new Date() } } // only greater than now
           ]
 
         })
-
       }
-     })
+    })
 
     opts.where = filter
   }
 
   if (req.query.sort) {
-    opts.order = JSON.parse(req.query.sort)
+    const findKey = '_enumtext'
+    opts.order = JSON.parse(req.query.sort).map(i => {
+      if (Array.isArray(i) && (i[0].indexOf(findKey) > 0 || i[0] === 'text')) {
+        return i[1] === 'DESC'
+          ? sequelize.literal(`${i[0]} REGEXP "^[a-z]" ASC, ${i[0]} DESC`)
+          : sequelize.literal(`${i[0]} REGEXP "^[a-z]" DESC, ${i[0]} ASC`)
+      } else {
+        return i
+      }
+    })
   }
 
   if (req.query.offset) {
