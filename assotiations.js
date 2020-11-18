@@ -40,45 +40,45 @@ function _updateSingleAssoc (a, data, saved, pkname, transaction) {
   cond[a.fk] = saved[pkname]
   saved.dataValues[a.name] = []
   // find all assotiations
-  return a.model.findAll({where: cond})
-  .then((found) => {
-    const promises = []
-    const changed = _.filter(data, (i) => i.id !== undefined)
-    // then continue with changed rows
-    changed.map((ch) => {
-      const row = _.find(found, (i) => i.id === ch.id)
-      // throw new Error('row not found in existin, incomming data wrong: ' + JSON.stringify(ch))
-      if (row !== undefined) { // wrong data doesnot contain updated, but should => force update
-        if (!ch.updated) {
-          ch.updated = new Date()
+  return a.model.findAll({ where: cond })
+    .then((found) => {
+      const promises = []
+      const changed = _.filter(data, (i) => i.id !== undefined)
+      // then continue with changed rows
+      changed.map((ch) => {
+        const row = _.find(found, (i) => i.id === ch.id)
+        // throw new Error('row not found in existin, incomming data wrong: ' + JSON.stringify(ch))
+        if (row !== undefined) { // wrong data doesnot contain updated, but should => force update
+          if (!ch.updated) {
+            ch.updated = new Date()
+          }
+          // update only if timestamps differ or DB row not set updated
+          if (!row.updated || row.updated.toISOString() !== ch.updated) {
+            const p = row.update(ch, { transaction: transaction }).then((savedrow) => {
+              return saved.dataValues[a.name].push(_removePKs(a, savedrow))
+            })
+            promises.push(p)
+          } else {
+            saved.dataValues[a.name].push(_removePKs(a, row))
+          }
         }
-        // update only if timestamps differ or DB row not set updated
-        if (!row.updated || row.updated.toISOString() !== ch.updated) {
-          const p = row.update(ch, {transaction: transaction}).then((savedrow) => {
-            return saved.dataValues[a.name].push(_removePKs(a, savedrow))
-          })
-          promises.push(p)
-        } else {
-          saved.dataValues[a.name].push(_removePKs(a, row))
+      })
+      // and destroy those existing rows that are not in data
+      found.map((row) => {
+        const inData = _.find(data, (i) => i.id === row.id)
+        if (inData === undefined) {
+          promises.push(row.destroy({ transaction: transaction }))
         }
-      }
+      })
+      return Sequelize.Promise.all(promises)
+    }).then(() => {
+      return _saveNewAssocs(a, data, cond, transaction)
+    }).then((savedrows) => {
+      saved.dataValues[a.name] = saved.dataValues[a.name].concat(savedrows)
+      saved.dataValues[a.name] = saved.dataValues[a.name].map(i => {
+        return i.toJSON ? _removePKs(a, i) : i
+      })
     })
-    // and destroy those existing rows that are not in data
-    found.map((row) => {
-      const inData = _.find(data, (i) => i.id === row.id)
-      if (inData === undefined) {
-        promises.push(row.destroy({transaction: transaction}))
-      }
-    })
-    return Sequelize.Promise.all(promises)
-  }).then(() => {
-    return _saveNewAssocs(a, data, cond, transaction)
-  }).then((savedrows) => {
-    saved.dataValues[a.name] = saved.dataValues[a.name].concat(savedrows)
-    saved.dataValues[a.name] = saved.dataValues[a.name].map(i => {
-      return i.toJSON ? _removePKs(a, i) : i
-    })
-  })
 }
 
 function _saveNewAssocs (a, data, ids, transaction) {
@@ -87,7 +87,7 @@ function _saveNewAssocs (a, data, ids, transaction) {
   }).map((i) => {
     return _.extend({}, ids, i)
   })
-  return a.model.bulkCreate(newI, {transaction: transaction})
+  return a.model.bulkCreate(newI, { transaction: transaction })
 }
 
 exports.load = function (items, assotiations, pkname) {
@@ -105,25 +105,26 @@ function _loadSingleAssoc (a, items, pkname) {
   })
   const cond = _.extend({}, a.defaults)
   cond[a.fk] = {
-    [Sequelize.Op.in]: _.pluck(items, pkname)
+    [Sequelize.Op.in]: _.map(items, pkname)
   }
+
   if (a.defaults) {
     attrs = _.remove(Object.keys(a.model.attributes || a.model.rawAttributes), (i) => {
       return Object.keys(a.defaults).indexOf(i) < 0
     })
   }
-  return a.model.findAll({where: cond, attributes: attrs})
-  .then((found) => {
-    items.map((i) => {
-      if (!i.dataValues[a.name]) {
-        i.dataValues[a.name] = []
-      }
+  return a.model.findAll({ where: cond, attributes: attrs })
+    .then((found) => {
+      items.map((i) => {
+        if (!i.dataValues[a.name]) {
+          i.dataValues[a.name] = []
+        }
+      })
+      found.map((f) => {
+        const item = _idx[f[a.fk]]
+        item.dataValues[a.name].push(_.omit(f.dataValues, [a.fk]))
+      })
     })
-    found.map((f) => {
-      const item = _idx[f[a.fk]]
-      item.dataValues[a.name].push(_.omit(f.dataValues, [a.fk]))
-    })
-  })
 }
 
 exports.delete = function (item, assotiations, pkname, transaction) {
