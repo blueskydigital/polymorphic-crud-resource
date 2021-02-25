@@ -34,7 +34,7 @@ module.exports = function (Model, assotiations, opts) {
       }
       next()
     })
-    .catch(next)
+      .catch(next)
   }
 
   function _prepareSearch (req, res, next) {
@@ -54,40 +54,40 @@ module.exports = function (Model, assotiations, opts) {
     var rows
     rows = null
     return Model.findAndCountAll(req.searchOpts)
-    .then(function (result) {
-      res.set('x-total-count', result.count)
-      rows = result.rows
-      return assots.load(rows, req.ass4load, pkname)
-    })
-    .then(function () {
-      res.status(200).json(rows)
-      return next()
-    })
-    .catch(next)
+      .then(function (result) {
+        res.set('x-total-count', result.count)
+        rows = result.rows
+        return assots.load(rows, req.ass4load, pkname)
+      })
+      .then(function () {
+        res.status(200).json(rows)
+        return next()
+      })
+      .catch(next)
   }
 
   function _create (req, res, next) {
     return _doCreate(req.body, req.transaction)
-    .then(function (newinstance) {
-      if (req.transaction) {
-        req.transaction.commit()
-      }
-      res.status(201).json(newinstance)
-      req.created = newinstance
-      return next()
-    })
-    .catch(next)
+      .then(function (newinstance) {
+        if (req.transaction) {
+          req.transaction.commit()
+        }
+        res.status(201).json(newinstance)
+        req.created = newinstance
+        return next()
+      })
+      .catch(next)
   }
 
   function _doCreate (body, transaction) {
     const item = Model.build(body)
-    return item.save(transaction ? {transaction: transaction} : {})
-    .then(function (saved) {
-      return assots.save(body, saved, assotiations, pkname, transaction)
-    })
-    .then(function (allsaved) {
-      return item.toJSON()
-    })
+    return item.save(transaction ? { transaction: transaction } : {})
+      .then(function (saved) {
+        return assots.save(body, saved, assotiations, pkname, transaction)
+      })
+      .then(function (allsaved) {
+        return item.toJSON()
+      })
   }
 
   function _doRetrieve (item) {
@@ -102,53 +102,51 @@ module.exports = function (Model, assotiations, opts) {
   }
 
   function _doUpdate (item, body, transaction) {
-    return item.update(body, transaction ? {
-      transaction: transaction
-    } : {})
-    .then(function (updated) {
-      return assots.update(body, updated, assotiations, pkname, transaction)
-    })
-    .then(function (allsaved) {
-      return item.toJSON()
-    })
+    return item.update(body, transaction ? { transaction: transaction } : {})
+      .then(function (updated) {
+        return assots.update(body, updated, assotiations, pkname, transaction)
+      })
+      .then(function (allsaved) {
+        return item.toJSON()
+      })
   }
 
   function _update (req, res, next) {
     return _doUpdate(req.found, req.body, req.transaction)
-    .then(function (updated) {
-      if (req.transaction) {
-        req.transaction.commit()
-      }
-      res.json(updated)
-      req.updated = updated
-      return next()
-    })
-    .catch(next)
+      .then(function (updated) {
+        if (req.transaction) {
+          req.transaction.commit()
+        }
+        res.json(updated)
+        req.updated = updated
+        return next()
+      })
+      .catch(next)
   }
 
   function _doDelete (item, transaction, cb) {
     return assots.load([item], assotiations, pkname)
-    .then(function () {
-      return assots.delete(item, assotiations, pkname, transaction)
-    })
-    .then(function () {
-      return item.destroy(transaction ? {transaction: transaction} : {})
-    })
-    .then(function (allsaved) {
-      return item.toJSON()
-    })
+      .then(function () {
+        return assots.delete(item, assotiations, pkname, transaction)
+      })
+      .then(function () {
+        return item.destroy(transaction ? { transaction: transaction } : {})
+      })
+      .then(function (allsaved) {
+        return item.toJSON()
+      })
   }
 
   function _delete (req, res, next) {
     return _doDelete(req.found, req.transaction)
-    .then(function (removed) {
-      if (req.transaction) {
-        req.transaction.commit()
-      }
-      res.json(removed)
-      return next()
-    })
-    .catch(next)
+      .then(function (removed) {
+        if (req.transaction) {
+          req.transaction.commit()
+        }
+        res.json(removed)
+        return next()
+      })
+      .catch(next)
   }
 
   return {
@@ -156,11 +154,11 @@ module.exports = function (Model, assotiations, opts) {
       if (middlewares == null) {
         middlewares = {}
       }
-      app.get('', middlewares['list'] || [], _prepareSearch, _list)
-      app.post('', middlewares['create'] || [], _create)
-      app.get('/:id', middlewares['get'] || [], _load, _retrieve)
-      app.put('/:id', middlewares['update'] || [], _load, _update)
-      return app['delete']('/:id', middlewares['delete'] || [], _load, _delete)
+      app.get('', middlewares.list || [], _prepareSearch, _list)
+      app.post('', middlewares.create || [], _create)
+      app.get('/:id', middlewares.get || [], _load, _retrieve)
+      app.put('/:id', middlewares.update || [], _load, _update)
+      return app.delete('/:id', middlewares.delete || [], _load, _delete)
     },
     create: _doCreate,
     retrieve: _doRetrieve,

@@ -49,11 +49,12 @@ function _updateSingleAssoc (a, data, saved, pkname, transaction) {
         const row = _.find(found, (i) => i.id === ch.id)
         // throw new Error('row not found in existin, incomming data wrong: ' + JSON.stringify(ch))
         if (row !== undefined) { // wrong data doesnot contain updated, but should => force update
-          if (!ch.updated) {
-            ch.updated = new Date()
+          const up = row.updated ? 'updated' : (row.updatedAt ? 'updatedAt' : 'updated_at')
+          if (!ch[up]) {
+            ch[up] = new Date()
           }
           // update only if timestamps differ or DB row not set updated
-          if (!row.updated || row.updated.toISOString() !== ch.updated) {
+          if (!row[up] || row[up].toISOString() !== ch[up]) {
             const p = row.update(ch, { transaction: transaction }).then((savedrow) => {
               return saved.dataValues[a.name].push(_removePKs(a, savedrow))
             })
